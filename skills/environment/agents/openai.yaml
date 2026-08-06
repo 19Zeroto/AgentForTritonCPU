@@ -1,0 +1,4 @@
+interface:
+  display_name: "Triton CPU Environment"
+  short_description: "Activate Triton CPU toolchain and paths"
+  default_prompt: "Use $environment to prepare and verify the Triton CPU development environment."
