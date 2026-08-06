@@ -13,7 +13,7 @@ description: Prepare and verify the Triton CPU development environment by activa
 3. Source the helper in the current shell:
 
    ```bash
-   source "$AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh"
+   source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
    ```
 
 4. Verify printed `python`, `LLVM_INSTALL_DIR`, `TRITON_REPO_DIR`,

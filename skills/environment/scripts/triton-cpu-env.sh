@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Usage:
-#   source "$AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh"
+#   source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   echo "This script must be sourced, not executed." >&2

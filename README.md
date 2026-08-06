@@ -6,7 +6,7 @@ Triton CPU 专用 Agent tooling/spec 仓。保存长期规则、任务 Spec、�
 ## Layout
 
 ```text
-agentfortritoncpu/
+AgentForTritonCPU/
 ├── agent/
 │   ├── AGENTS.md
 │   ├── specs/
@@ -32,7 +32,7 @@ agentfortritoncpu/
 
 ```text
 $AGENT_DIR/
-├── agentfortritoncpu/
+├── AgentForTritonCPU/
 ├── triton-cpu/
 ├── llvm-project/
 ├── logs/
@@ -45,7 +45,7 @@ $AGENT_DIR/
 加载环境：
 
 ```bash
-source "$AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh"
+source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
 ```
 
 每个 `skills/<name>/SKILL.md` 是 AI 统一入口；脚本在 `scripts/`，详细资料在
