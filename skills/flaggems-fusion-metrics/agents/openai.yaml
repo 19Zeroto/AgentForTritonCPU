@@ -1,0 +1,4 @@
+interface:
+  display_name: "FlagGems Fusion Metrics"
+  short_description: "Validate and run FlagGems fusion metrics"
+  default_prompt: "Use $flaggems-fusion-metrics to validate formulas or run the fusion metrics suite."
