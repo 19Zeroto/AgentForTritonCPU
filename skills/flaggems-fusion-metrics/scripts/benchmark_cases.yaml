@@ -62,7 +62,8 @@ gelu_and_mul:
 get_scheduler_metadata:
   test_file: test_get_scheduler_metadata.py
   marker: get_scheduler_metadata
-  dtype: float32
+  # The benchmark accepts float16/bfloat16 only.
+  dtype: bfloat16
 instance_norm:
   test_file: test_instance_norm.py
   marker: instance_norm

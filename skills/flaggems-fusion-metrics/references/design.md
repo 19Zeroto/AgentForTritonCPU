@@ -230,8 +230,9 @@ flash_mla:
   dtype: bfloat16
 ```
 
-当前默认值按类别设置：compute 算子使用 bfloat16，memory 算子使用
-float32；用户仍可通过 `--dtypes` 显式覆盖。
+当前默认值按类别设置：compute 算子使用 bfloat16，memory 算子通常使用
+float32。`get_scheduler_metadata` 的 benchmark 仅支持 float16/bfloat16，因此
+静态配置为 bfloat16。用户仍可通过 `--dtypes` 显式覆盖。
 
 用户显式 dtype 覆盖与固定默认值均在启动前确定。运行失败后不得切换 BF16 或取消
 dtype 重新执行。不同 dtype 的结果必须来自明确的独立运行。

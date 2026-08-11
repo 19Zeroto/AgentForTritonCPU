@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-07T09:30:03+08:00",
+  "generated_at": "2026-08-11T14:45:14+08:00",
   "entries": {
     "[\"apply_repetition_penalties\",\"float32\",[[1,1024],[1,1024],[1,1024],[1]]]": {
       "category": "memory",
@@ -575,6 +575,11 @@
       "category": "memory",
       "metric": "logical_bytes",
       "value": 335548416
+    },
+    "[\"rwkv_mm_sparsity\",\"bfloat16\",[[16384],[16384,4096]]]": {
+      "category": "compute",
+      "metric": "logical_flops",
+      "value": 6710886.3999999985
     },
     "[\"rwkv_mm_sparsity\",\"float32\",[[16384],[16384,4096]]]": {
       "category": "compute",
