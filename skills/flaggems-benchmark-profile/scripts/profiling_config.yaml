@@ -1,0 +1,67 @@
+tiers:
+  light:
+    warmup: 50
+    iterations: 30
+  medium:
+    warmup: 200
+    iterations: 100
+  heavy:
+    warmup: 500
+    iterations: 200
+
+global:
+  mode: kernel
+  level: core
+  default_tier: medium
+  # null means use each benchmark class's default metrics. Set a list on a
+  # specific test to force extra metrics supported by that benchmark.
+  metrics: null
+  # null means use each benchmark class's default dtypes.
+  dtypes: null
+
+system:
+  triton_cache_dir: null
+  clear_triton_cache: true
+  numa:
+    enabled: true
+    cpunodebind: 3
+    membind: 3
+  cpu_affinity: "456-487"
+  env_vars:
+    OMP_NUM_THREADS: "1"
+    MKL_NUM_THREADS: "1"
+
+profiling:
+  cpu_memory:
+    enabled: true
+    interval_sec: 1.0
+  cache_metrics:
+    enabled: true
+    backend: perf
+    events:
+      - L1-dcache-loads
+      - L1-dcache-load-misses
+      - L1-dcache-stores
+      - LLC-loads
+      - LLC-load-misses
+      - LLC-stores
+      - dTLB-load-misses
+      - branch-misses
+      - instructions
+      - cycles
+  compilation_time:
+    enabled: true
+
+tests:
+  - test_file: test_silu_and_mul.py
+    marker: silu_and_mul
+    tier: medium
+  - test_file: test_add.py
+    marker: add
+    tier: heavy
+  - test_file: test_mm.py
+    marker: mm
+    tier: light
+  - test_file: test_flash_attention_forward.py
+    marker: flash_attention_forward
+    tier: light

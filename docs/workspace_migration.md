@@ -7,7 +7,7 @@ Spec、prompt、脚本的唯一来源；产品仓不保存这些文件或软链�
 
 ```text
 $AGENT_DIR/
-├── agentfortritoncpu/
+├── AgentForTritonCPU/
 ├── triton-cpu/
 ├── llvm-project/
 ├── logs/
@@ -19,7 +19,7 @@ $AGENT_DIR/
 ```bash
 export AGENT_DIR="${AGENT_DIR:-$HOME/agent}"
 git clone https://github.com/19Zeroto/AgentForTritonCPU.git \
-  "$AGENT_DIR/agentfortritoncpu"
+  "$AGENT_DIR/AgentForTritonCPU"
 ```
 
 `triton-cpu` 和 `llvm-project` 由各自流程准备。不要在存在未保存修改时替换仓目录。
@@ -30,7 +30,7 @@ git clone https://github.com/19Zeroto/AgentForTritonCPU.git \
 
 ```bash
 test ! -e "$AGENT_DIR/AGENTS.md"
-ln -s agentfortritoncpu/agent/AGENTS.md "$AGENT_DIR/AGENTS.md"
+ln -s AgentForTritonCPU/agent/AGENTS.md "$AGENT_DIR/AGENTS.md"
 ```
 
 不得在 `triton-cpu` 内创建 `AGENTS.md`、`agents/` 或 Agent 脚本软链。确认：
@@ -38,7 +38,7 @@ ln -s agentfortritoncpu/agent/AGENTS.md "$AGENT_DIR/AGENTS.md"
 ```bash
 test -L "$AGENT_DIR/AGENTS.md"
 test "$(readlink "$AGENT_DIR/AGENTS.md")" = \
-  "agentfortritoncpu/agent/AGENTS.md"
+  "AgentForTritonCPU/agent/AGENTS.md"
 test ! -e "$AGENT_DIR/triton-cpu/AGENTS.md"
 test ! -e "$AGENT_DIR/triton-cpu/agents"
 ```
@@ -48,7 +48,7 @@ test ! -e "$AGENT_DIR/triton-cpu/agents"
 ```bash
 export TRITON_REPO_DIR="$AGENT_DIR/triton-cpu"
 export LLVM_INSTALL_DIR="$AGENT_DIR/llvm-project/install"
-source "$AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh"
+source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
 ```
 
 脚本设计和调用入口位于 `skills/`。任务 Spec 保存到
@@ -83,10 +83,10 @@ codegraph status "$AGENT_DIR/triton-cpu"
 
 ```bash
 codex --version
-git -C "$AGENT_DIR/agentfortritoncpu" status --short
+git -C "$AGENT_DIR/AgentForTritonCPU" status --short
 git -C "$AGENT_DIR/triton-cpu" status --short
 ls -l "$AGENT_DIR/AGENTS.md"
-source "$AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh"
+source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
 ```
 
 大型 build、test、benchmark 前按 `agent/AGENTS.md` 加载对应规则。

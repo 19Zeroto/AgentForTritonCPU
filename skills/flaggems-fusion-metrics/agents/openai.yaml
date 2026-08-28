@@ -1,4 +1,4 @@
 interface:
   display_name: "FlagGems Fusion Metrics"
-  short_description: "Validate and run FlagGems fusion metrics"
-  default_prompt: "Use $flaggems-fusion-metrics to run the serial benchmark runner, build/update the fixed metric map, or export reports from logs."
+  short_description: "Run fusion benchmarks and export metric CSVs"
+  default_prompt: "Use $flaggems-fusion-metrics to run serial fusion benchmarks or export tflops/gbps reports from record logs."

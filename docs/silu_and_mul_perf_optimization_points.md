@@ -18,7 +18,7 @@ Target: `FlagGems/benchmark/test_silu_and_mul.py` on Kunpeng CPU backend
 
 ## Baseline Environment
 
-- Environment setup: `source $AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh`
+- Environment setup: `source $AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh`
 - Fixed benchmark thread count: `OMP_NUM_THREADS=32`
 - Stable single-dtype baseline: `--warmup 100 --iter 100`
 - Latest full/comprehensive sweep: `--warmup 10 --iter 10`
@@ -140,7 +140,7 @@ Interpretation:
 
 Command:
 
-`source $AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh && export OMP_NUM_THREADS=32 && export TRITON_CACHE_DIR=/tmp/triton-cache-silu-official-comprehensive-f32-20260629a && numactl --cpunodebind=3 --membind=3 taskset -c 456-487 pytest -s FlagGems/benchmark/test_silu_and_mul.py --mode operator --level comprehensive --dtypes float32 --warmup 3 --iter 3 --record log`
+`source $AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh && export OMP_NUM_THREADS=32 && export TRITON_CACHE_DIR=/tmp/triton-cache-silu-official-comprehensive-f32-20260629a && numactl --cpunodebind=3 --membind=3 taskset -c 456-487 pytest -s FlagGems/benchmark/test_silu_and_mul.py --mode operator --level comprehensive --dtypes float32 --warmup 3 --iter 3 --record log`
 
 This run uses benchmark-provided core/comprehensive shapes, not a custom shape file or standalone runner.
 
@@ -172,7 +172,7 @@ Interpretation:
 
 Command:
 
-`source $AGENT_DIR/agentfortritoncpu/skills/environment/scripts/triton-cpu-env.sh && export OMP_NUM_THREADS=32 && export TRITON_CACHE_DIR=/tmp/triton-cache-silu-components-official-f32-20260629a && numactl --cpunodebind=3 --membind=3 taskset -c 456-487 pytest -s FlagGems/benchmark/test_silu.py::test_silu FlagGems/benchmark/test_mul.py::test_mul --mode operator --level comprehensive --dtypes float32 --warmup 3 --iter 3 --record log`
+`source $AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh && export OMP_NUM_THREADS=32 && export TRITON_CACHE_DIR=/tmp/triton-cache-silu-components-official-f32-20260629a && numactl --cpunodebind=3 --membind=3 taskset -c 456-487 pytest -s FlagGems/benchmark/test_silu.py::test_silu FlagGems/benchmark/test_mul.py::test_mul --mode operator --level comprehensive --dtypes float32 --warmup 3 --iter 3 --record log`
 
 Core 1G-shape component results:
 
@@ -195,7 +195,7 @@ Date: 2026-07-01
 
 Log root:
 
-`$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/full-silu-and-mul-comprehensive-omp32-w10i10-20260701-004930`
+`$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/full-silu-and-mul-comprehensive-omp32-w10i10-20260701-004930`
 
 Common environment:
 
@@ -407,7 +407,7 @@ Results from quick screening:
 
 Controlled OMP A/B after source rollback:
 
-- Log root: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/omp-ab-f32-w10i10-20260630-185157`.
+- Log root: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/omp-ab-f32-w10i10-20260630-185157`.
 - Scope: official benchmark core shapes only, `float32`, `warmup=10`, `iter=10`, node3 cores `456-487`, current source import shim enabled.
 - Confirmed imports after rollback:
   - `flag_gems.mul: flag_gems.ops.mul`
@@ -444,7 +444,7 @@ OMP conclusion:
 Fixed-OMP source variant retest:
 
 - Correction to decision basis: `OMP_NUM_THREADS=32` is a fixed benchmark parameter, not an optimization variable.
-- Baseline log root: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-baseline-omp32-w10i10-20260630-191746`.
+- Baseline log root: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-baseline-omp32-w10i10-20260630-191746`.
 - Fixed scope for all source variants: official core shapes, `float32`, `OMP_NUM_THREADS=32`, `warmup=10`, `iter=10`, node3 cores `456-487`, current source import shim enabled.
 - Baseline Gems latency:
   - `silu_and_mul`: `[1073741824]` 496.038 ms, `[64,64]` 0.451 ms, `[4096,4096]` 6.950 ms, `[64,512,512]` 6.945 ms, `[1024,1024,1024]` 495.155 ms.
@@ -454,13 +454,13 @@ Source variant results, relative to the fixed OMP=32 baseline:
 
 | Variant | Logs | Main result | Keep? |
 | --- | --- | --- | --- |
-| `mul` tile512 `prefer_1d_tile=True` | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-mul-1dtile512-omp32-w10i10-20260630-192406` | 1G `+2.07%`, `1024^3 +2.29%`; mid shapes within noise | No |
-| `mul` tile1024 block-pointer | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-mul-bptr1024-omp32-w10i10-20260630-192736` | 1G `+17.17%`, mid shapes `+41.61%/+43.67%`, `1024^3 +18.04%` | No |
-| `silu_and_mul` tile128 block-pointer | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-silu-bptr128-omp32-w10i10-20260630-193227` | Mid shapes improve `-26.37%/-26.45%`, but 1G and `1024^3` regress `+2.20%/+1.90%` | Not globally |
-| `silu_and_mul` tile256 block-pointer | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-silu-bptr256-omp32-w10i10-20260630-193551`, rerun `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-silu-bptr256-rerun-omp32-w10i10-20260630-193926` | Results are unstable: first run has `1024^3 +108.71%`, rerun has 1G `+63.63%` and mid-shape regressions | No |
-| `transfer_to_scf full_unroll=false` | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-fullunroll-false-omp32-w10i10-20260630-194413` | Mostly noise/small mixed effects; `mul 1024^3 +2.60%` regresses | No |
-| Shape-aware tile128 with duplicated default kernel | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-final-shapeaware-tile128-omp32-w10i10-20260630-195112`, rerun `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-final-shapeaware-tile128-rerun-omp32-w10i10-20260630-195905` | Unstable and often very bad: run1 `silu_and_mul` 1G `+138.33%`; rerun small shape `+2913%` | No |
-| Shape-aware tile128 importing original default kernel | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-shapeaware-importdefault-tile128-omp32-w10i10-20260630-200313` | `[4096,4096] -23.91%`, but 1G `+51.07%`, `[64,64] +412.95%`, `[64,512,512] +22.42%`, `1024^3 +48.06%` | No |
+| `mul` tile512 `prefer_1d_tile=True` | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-mul-1dtile512-omp32-w10i10-20260630-192406` | 1G `+2.07%`, `1024^3 +2.29%`; mid shapes within noise | No |
+| `mul` tile1024 block-pointer | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-mul-bptr1024-omp32-w10i10-20260630-192736` | 1G `+17.17%`, mid shapes `+41.61%/+43.67%`, `1024^3 +18.04%` | No |
+| `silu_and_mul` tile128 block-pointer | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-silu-bptr128-omp32-w10i10-20260630-193227` | Mid shapes improve `-26.37%/-26.45%`, but 1G and `1024^3` regress `+2.20%/+1.90%` | Not globally |
+| `silu_and_mul` tile256 block-pointer | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-silu-bptr256-omp32-w10i10-20260630-193551`, rerun `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-silu-bptr256-rerun-omp32-w10i10-20260630-193926` | Results are unstable: first run has `1024^3 +108.71%`, rerun has 1G `+63.63%` and mid-shape regressions | No |
+| `transfer_to_scf full_unroll=false` | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-fullunroll-false-omp32-w10i10-20260630-194413` | Mostly noise/small mixed effects; `mul 1024^3 +2.60%` regresses | No |
+| Shape-aware tile128 with duplicated default kernel | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-final-shapeaware-tile128-omp32-w10i10-20260630-195112`, rerun `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-final-shapeaware-tile128-rerun-omp32-w10i10-20260630-195905` | Unstable and often very bad: run1 `silu_and_mul` 1G `+138.33%`; rerun small shape `+2913%` | No |
+| Shape-aware tile128 importing original default kernel | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-shapeaware-importdefault-tile128-omp32-w10i10-20260630-200313` | `[4096,4096] -23.91%`, but 1G `+51.07%`, `[64,64] +412.95%`, `[64,512,512] +22.42%`, `1024^3 +48.06%` | No |
 
 ### Warmup 100 / Iter 100 Targeted Retests
 
@@ -477,7 +477,7 @@ Common scope:
 
 Default `silu_and_mul` standalone rerun:
 
-- Log root: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/baseline-silu-only-rerun-omp32-w100i100-20260701-015858`
+- Log root: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/baseline-silu-only-rerun-omp32-w100i100-20260701-015858`
 - Import: `flag_gems.silu_and_mul: flag_gems.fused.silu_and_mul`
 - Status: passed
 
@@ -491,7 +491,7 @@ Default `silu_and_mul` standalone rerun:
 
 `silu_and_mul` tile128 block-pointer retest:
 
-- Log root: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-silu-bptr128-omp32-w100i100-20260701-014618`
+- Log root: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-silu-bptr128-omp32-w100i100-20260701-014618`
 - Temporary import: `flag_gems.silu_and_mul: _kunpeng.fused.silu_and_mul`
 - Config: `CodeGenConfig(max_tile_size=128, max_grid_size=(65536,65536,65536), prefer_block_pointer=True, prefer_1d_tile=False)`
 - Status: passed, source change rolled back
@@ -513,8 +513,8 @@ Tile128 conclusion:
 Default `mul` standalone reruns:
 
 - Log roots:
-  - `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/baseline-mul-only-omp32-w100i100-20260701-004037`
-  - `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/baseline-mul-only-rerun-omp32-w100i100-20260701-012840`
+  - `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/baseline-mul-only-omp32-w100i100-20260701-004037`
+  - `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/baseline-mul-only-rerun-omp32-w100i100-20260701-012840`
 - Import: `flag_gems.mul: flag_gems.ops.mul`
 - Status: both passed
 
@@ -529,8 +529,8 @@ Default `mul` standalone reruns:
 `mul` grid32768 retests:
 
 - Log roots:
-  - `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-mul-grid32768-omp32-w100i100-20260701-003238`
-  - `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-mul-grid32768-rerun-omp32-w100i100-20260701-013727`
+  - `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-mul-grid32768-omp32-w100i100-20260701-003238`
+  - `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-mul-grid32768-rerun-omp32-w100i100-20260701-013727`
 - Temporary import: `flag_gems.mul: _kunpeng.ops.mul`
 - Config: `CodeGenConfig(max_tile_size=512, max_grid_size=(32768,65536,65536), prefer_block_pointer=True, prefer_1d_tile=False)`
 - Status: both passed, source change rolled back
@@ -589,9 +589,9 @@ SVE/vector-lowering inspection:
 Second-legalize experiment:
 
 - Temporary patch under test: add `TRITON_SHARED_SVE_LEGALIZE_AFTER_MATH=1` to run `transform.legalize(vscale=...)` immediately after `test-math-polynomial-approximation` and before `tptr-to-llvm`.
-- Smoke log: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-sve-relegalize-smoke-20260701-022004`
-- 100/100 log: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-sve-relegalize-omp32-w100i100-20260701-022309`
-- 100/100 rerun log: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-sve-relegalize-rerun-omp32-w100i100-20260701-023604`
+- Smoke log: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-sve-relegalize-smoke-20260701-022004`
+- 100/100 log: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-sve-relegalize-omp32-w100i100-20260701-022309`
+- 100/100 rerun log: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-sve-relegalize-rerun-omp32-w100i100-20260701-023604`
 - All runs passed and source patch was rolled back.
 
 | Shape | Default Gems ms | Re-legalize run1 Gems ms | Re-legalize run2 Gems ms | Conclusion |
@@ -636,8 +636,8 @@ Purpose:
 
 Log root:
 
-- `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/retest-optim-w10i10-omp32-20260701-avg3-c`
-- Summary JSON: `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/retest-optim-w10i10-omp32-20260701-avg3-c/valid_average_summary.json`
+- `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/retest-optim-w10i10-omp32-20260701-avg3-c`
+- Summary JSON: `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/retest-optim-w10i10-omp32-20260701-avg3-c/valid_average_summary.json`
 
 Notes:
 
@@ -675,13 +675,13 @@ Interpretation:
 | Direction | Status | Evidence | Conclusion |
 | --- | --- | --- | --- |
 | Dedicated Kunpeng `CodeGenConfig` | Tried | tile128/tile256/tile1024/1d-tile/grid32768 variants across 10/10 and selected 100/100 retests | Do not add one fixed global config now; performance is shape-sensitive and sometimes unstable. |
-| `silu_and_mul` tile128 / smaller vector body | Tried at 100/100 | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-silu-bptr128-omp32-w100i100-20260701-014618` vs default `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/baseline-silu-only-rerun-omp32-w100i100-20260701-015858` | Not a global fix; improves only `[64,512,512]`, regresses 1G and `[1024^3]`. |
-| `silu_and_mul` tile256 block-pointer | Candidate from 10/10 three-valid retest | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/retest-optim-w10i10-omp32-20260701-avg3-c`, valid runs 1/2/3 | Best 10/10 signal: about `-4.8%` on both 1G shapes and `-15%` on mid shapes. Needs 100/100 confirmation before patching. |
-| `mul` CPU grid/CTA cap | Tried at 100/100 | grid32768 logs `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-mul-grid32768-omp32-w100i100-20260701-003238` and `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-mul-grid32768-rerun-omp32-w100i100-20260701-013727` | Fixed `max_grid_size[0]=32768` is not enough; may reduce mid-shape variance but is not reliably faster on 1G shapes. |
+| `silu_and_mul` tile128 / smaller vector body | Tried at 100/100 | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-silu-bptr128-omp32-w100i100-20260701-014618` vs default `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/baseline-silu-only-rerun-omp32-w100i100-20260701-015858` | Not a global fix; improves only `[64,512,512]`, regresses 1G and `[1024^3]`. |
+| `silu_and_mul` tile256 block-pointer | Candidate from 10/10 three-valid retest | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/retest-optim-w10i10-omp32-20260701-avg3-c`, valid runs 1/2/3 | Best 10/10 signal: about `-4.8%` on both 1G shapes and `-15%` on mid shapes. Needs 100/100 confirmation before patching. |
+| `mul` CPU grid/CTA cap | Tried at 100/100 | grid32768 logs `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-mul-grid32768-omp32-w100i100-20260701-003238` and `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-mul-grid32768-rerun-omp32-w100i100-20260701-013727` | Fixed `max_grid_size[0]=32768` is not enough; may reduce mid-shape variance but is not reliably faster on 1G shapes. |
 | Dense contiguous 1D fast path | Tried | dense direct pointer experiment from 2026-06-29 | Helps some mid-size contiguous shapes, not the worst 1G float32 shapes; not primary repair. |
 | Python-level shape-aware wrappers | Tried | shape-aware tile128 duplicate/import-default runs | Drop; multiple Python-level wrappers introduce severe instability and small-shape overhead. |
-| `transfer_to_scf full_unroll=false` | Tried | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-fullunroll-false-omp32-w10i10-20260630-194413` | Drop; does not reduce the relevant `<512xf32>` math-body pressure and can regress. |
-| Lower-level arithmetic-vector splitting | Tried via second `legalize` at 100/100; do not keep | `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-sve-relegalize-omp32-w100i100-20260701-022309` and rerun `$AGENT_DIR/logs/agentfortritoncpu/legacy-agent-local/logs/variant-sve-relegalize-rerun-omp32-w100i100-20260701-023604`; `LegalizeOp` currently misses `math.exp`/`arith.divf` | Correct repair point identified, but blind re-legalize is unstable. Follow-up requires targeted `LegalizeOp`/transform matcher changes and likely LLVM/libtriton rebuild. |
+| `transfer_to_scf full_unroll=false` | Tried | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-fullunroll-false-omp32-w10i10-20260630-194413` | Drop; does not reduce the relevant `<512xf32>` math-body pressure and can regress. |
+| Lower-level arithmetic-vector splitting | Tried via second `legalize` at 100/100; do not keep | `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-sve-relegalize-omp32-w100i100-20260701-022309` and rerun `$AGENT_DIR/logs/AgentForTritonCPU/legacy-agent-local/logs/variant-sve-relegalize-rerun-omp32-w100i100-20260701-023604`; `LegalizeOp` currently misses `math.exp`/`arith.divf` | Correct repair point identified, but blind re-legalize is unstable. Follow-up requires targeted `LegalizeOp`/transform matcher changes and likely LLVM/libtriton rebuild. |
 | bf16 lowering repair | Out of current float32 baseline, evidence collected | TTSharedIR/LLVM/perf show bf16 emulation and shuffle/spill overhead | Track as separate repair point; do not mix it with the float32 performance conclusion. |
 | Benchmark methodology | Adopted | OMP fixed, 100/100 baseline and repeated 100/100 targeted retests | Keep `OMP_NUM_THREADS=32`; require repeated paired runs for noisy 1G shapes. |
 
@@ -690,4 +690,4 @@ Background-test note:
 - The skill contains `scripts/run_silu_pointwise_full_test.sh`.
 - Detached background processes started from this tool are cleaned up unless hosted externally; `screen` also does not survive the tool process cleanup for long benchmark runs.
 - Run the script directly from a user terminal when a true unattended long run is needed:
-  `LOG_ROOT="$AGENT_DIR/logs/agentfortritoncpu/silu-pointwise-manual" OMP_NUM_THREADS=32 WARMUP=100 ITER=100 LEVEL=core USE_CURRENT_TRITON=1 FULL_UNROLL=1 bash "$AGENT_DIR/agentfortritoncpu/skills/silu-pointwise/scripts/run_silu_pointwise_full_test.sh"`
+  `LOG_ROOT="$AGENT_DIR/logs/AgentForTritonCPU/silu-pointwise-manual" OMP_NUM_THREADS=32 WARMUP=100 ITER=100 LEVEL=core USE_CURRENT_TRITON=1 FULL_UNROLL=1 bash "$AGENT_DIR/AgentForTritonCPU/skills/silu-pointwise/scripts/run_silu_pointwise_full_test.sh"`

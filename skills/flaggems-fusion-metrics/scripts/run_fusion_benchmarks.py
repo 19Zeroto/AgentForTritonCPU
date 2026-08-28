@@ -54,7 +54,6 @@ COMPUTE_OPS = [
     "flash_mla",
     "flash_mla_sparse_fwd",
     "sparse_mla_fwd_interface",
-    "rwkv_mm_sparsity",
 ]
 MEMORY_OPS = [
     "apply_repetition_penalties",
@@ -73,6 +72,7 @@ MEMORY_OPS = [
     "reshape_and_cache",
     "reshape_and_cache_flash",
     "rwkv_ka_fusion",
+    "rwkv_mm_sparsity",
     "silu_and_mul",
     "silu_and_mul_out",
     "skip_layer_norm",
@@ -306,9 +306,8 @@ def main(argv: list[str] | None = None) -> int:
     root = args.output_dir.expanduser().resolve() / run_id
     records = root / "records"
     stdout = root / "stdout"
-    work_root = root / "work"
     if not args.dry_run:
-        for path in (records, stdout, work_root):
+        for path in (records, stdout):
             path.mkdir(parents=True, exist_ok=True)
 
     manifest: dict[str, Any] = {
@@ -342,8 +341,6 @@ def main(argv: list[str] | None = None) -> int:
         test_file = (BENCHMARK_DIR / case["test_file"]).resolve()
         if not test_file.is_file():
             parser.error(f"benchmark test file not found: {test_file}")
-        operation_work = work_root / op
-        execution_work = Path(tempfile.gettempdir()) / f"fgm-{run_id}-{index}"
         command = [
             sys.executable,
             "-m",
@@ -369,13 +366,13 @@ def main(argv: list[str] | None = None) -> int:
         if args.shape_file is not None:
             command.extend(["--shape_file", "shape_file.yaml"])
 
-        prefix = [
+        binding_prefix = [
             "numactl",
             f"--cpunodebind={args.cpu_node}",
             f"--membind={args.mem_node}",
             f"--physcpubind={cpu_bind_spec}",
         ]
-        full_command = prefix + command
+        full_command = binding_prefix + command
         entry: dict[str, Any] = {
             "op_name": op,
             "dtype": dtype,
@@ -384,7 +381,6 @@ def main(argv: list[str] | None = None) -> int:
             "returncode": None,
             "record_log": f"records/{op}.log",
             "stdout": f"stdout/{op}.log",
-            "work_dir": f"work/{op}",
         }
         manifest["operators"].append(entry)
         print(shlex.join(full_command))
@@ -392,45 +388,48 @@ def main(argv: list[str] | None = None) -> int:
             _print_status(op, "dry-run")
             continue
 
-        execution_work.mkdir(parents=True, exist_ok=True)
-        operation_work.parent.mkdir(parents=True, exist_ok=True)
-        operation_work.symlink_to(execution_work, target_is_directory=True)
-        benchmark_link = execution_work / "benchmark"
-        if not benchmark_link.exists():
-            benchmark_link.symlink_to(BENCHMARK_DIR, target_is_directory=True)
-        if args.shape_file is not None:
-            shape_link = execution_work / "shape_file.yaml"
-            if not shape_link.exists():
-                shape_link.symlink_to(shape_file)
         env = dict(os.environ)
         env["OMP_NUM_THREADS"] = str(args.omp_threads)
         env["PYTHONPATH"] = str(BENCHMARK_DIR) + os.pathsep + env.get(
             "PYTHONPATH", ""
         )
-        try:
-            completed = subprocess.run(
-                full_command,
-                cwd=execution_work,
-                env=env,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                timeout=args.timeout or None,
-                check=False,
-            )
-            (stdout / f"{op}.log").write_text(completed.stdout, encoding="utf-8")
-            entry["returncode"] = completed.returncode
-            record = _record_path(execution_work)
-            if record:
-                shutil.move(str(record), str(records / f"{op}.log"))
-            entry["status"] = "passed" if completed.returncode == 0 else "failed"
-            failed |= completed.returncode != 0
-            _print_status(op, entry["status"], completed.returncode)
-        except subprocess.TimeoutExpired as exc:
-            (stdout / f"{op}.log").write_text(exc.stdout or "", encoding="utf-8")
-            entry["status"] = "timeout"
-            failed = True
-            _print_status(op, "timeout")
+        temp_prefix = f"fgm-{run_id}-{index}-"
+        with tempfile.TemporaryDirectory(prefix=temp_prefix) as temporary:
+            execution_work = Path(temporary)
+            if args.shape_file is not None:
+                (execution_work / "shape_file.yaml").symlink_to(shape_file)
+            try:
+                completed = subprocess.run(
+                    full_command,
+                    cwd=execution_work,
+                    env=env,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    timeout=args.timeout or None,
+                    check=False,
+                )
+                (stdout / f"{op}.log").write_text(
+                    completed.stdout,
+                    encoding="utf-8",
+                )
+                entry["returncode"] = completed.returncode
+                record = _record_path(execution_work)
+                if record:
+                    shutil.move(str(record), str(records / f"{op}.log"))
+                entry["status"] = (
+                    "passed" if completed.returncode == 0 else "failed"
+                )
+                failed |= completed.returncode != 0
+                _print_status(op, entry["status"], completed.returncode)
+            except subprocess.TimeoutExpired as exc:
+                (stdout / f"{op}.log").write_text(
+                    exc.stdout or "",
+                    encoding="utf-8",
+                )
+                entry["status"] = "timeout"
+                failed = True
+                _print_status(op, "timeout")
 
     root.mkdir(parents=True, exist_ok=True)
     (root / "run.json").write_text(

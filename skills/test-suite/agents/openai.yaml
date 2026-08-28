@@ -1,0 +1,4 @@
+interface:
+  display_name: "FlagGems Test Suite"
+  short_description: "Run and resume FlagGems correctness tests"
+  default_prompt: "Use $test-suite to run the relevant FlagGems tests and summarize the results."

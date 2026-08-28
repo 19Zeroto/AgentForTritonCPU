@@ -1,0 +1,4 @@
+interface:
+  display_name: "Triton Commit Bisect"
+  short_description: "Bisect Triton CPU test regressions"
+  default_prompt: "Use $commit-bisect to locate the first Triton CPU commit that breaks this pytest target."

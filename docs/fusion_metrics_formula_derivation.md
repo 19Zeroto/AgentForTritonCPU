@@ -1,12 +1,12 @@
 # FlagGems Fusion Metrics 公式推理说明
 
-本文件依据`fusion_metrics_formulas.yaml`中的算子列表，整理两块内容：
+本文件依据 FlagGems benchmark 中启用的 fusion metric 算子列表，整理两块内容：
 
 1. **调用流程**：benchmark 如何构造输入、经由哪些产品入口和调度层启动主 kernel。
 2. **指标推导**：从算子语义和 kernel 主体推导可直接代入的
    `logical_flops` 或 `logical_bytes` 公式。
 
-本文覆盖 YAML 列出的全部算子：6 个计算量算子和 22 个访存量算子。说明详细度按
+本文覆盖当前列表中的全部算子：5 个计算量算子和 23 个访存量算子。说明详细度按
 实现复杂度区分：attention、归一化和多阶段 kernel 展开推导；单次逐元素计算或
 纯搬运算子合并说明调用语义与公式。3 个当前禁用的公式项仍保留推导，并明确记录
 禁用原因。
@@ -17,15 +17,14 @@
 
 ### 1.1 推理依据
 
-YAML 决定需要覆盖的算子列表，并提供当前运行时表达式。文档公式按以下顺序核对：
+对应 benchmark 类决定需要覆盖的算子列表，并提供当前运行时表达式。文档公式按以下顺序核对：
 
 1. benchmark 实际传入的参数、shape 和 dtype；
 2. 产品入口的参数约束和分支；
 3. 主 kernel 的计算或 load/store 语义；
-4. YAML 表达式及其 helper。
+4. benchmark 的 `get_tflops()` 或 `get_gbps()` 实现。
 
-若 YAML 与实现语义不一致，文档先按实现给出推理，再单独记录差异，不直接照抄
-YAML。
+若指标实现与产品语义不一致，文档先按产品实现给出推理，再单独记录差异。
 
 ### 1.2 指标分类
 
@@ -193,7 +192,7 @@ $$
 - head-dimension padding 属于实现开销；公式中的 $D$ 取原始
   `query.shape[-1]`。
 - 普通 kernel 与 Split-KV kernel 使用同一 logical FLOPs 公式。
-- 当前 YAML 的总 FLOPs 结构与上述推导一致。
+- 当前 benchmark `get_tflops()` 的总 FLOPs 结构与上述推导一致。
 - `attention_pair_count` 对 causal 或 local window 均加入 $L_k-L_q$
   偏移，全量 attention 不加偏移，与 kernel 的右对齐语义一致。
 
@@ -345,7 +344,7 @@ $$
 - 产品入口要求 `causal=True`，当前实现和 benchmark 实际面向 $S_q=1$ 的
   decode。若扩展到 $S_q>1$ 的右对齐因果 attention，严格 pair 数应为
   $S_qL_b-S_q(S_q-1)/2$（假设 $L_b\ge S_q$），不能直接沿用
-  $S_qL_b$。当前 YAML 公式是 decode 范围公式，不应外推到该未覆盖场景。
+  $S_qL_b$。当前 `get_tflops()` 是 decode 范围公式，不应外推到该未覆盖场景。
 
 ### 2.4 `flash_mla_sparse_fwd`
 
@@ -396,7 +395,7 @@ $$
 
 #### 2.4.3 特性与边界
 
-- 当前 YAML 使用配置容量 $K$，是所有候选均参与时的上界，也是稳定的 benchmark
+- 当前 `get_tflops()` 使用配置容量 $K$，是所有候选均参与时的上界，也是稳定的 benchmark
   归一化口径。
 - 负下标、越界下标、`topk_length` 和 causal mask 会使实际有效工作量低于该上界。
 - `attn_sink`、softmax、LSE 和索引判断不计入主矩阵 FLOPs。
@@ -439,39 +438,25 @@ $$
 $$
 
 benchmark 先把 `indices` 填充为越界值，再写入当前位置之前的随机下标；因此部分
-shape 下 $K_{b,i,g}^{\mathrm{eff}}<K$。当前 YAML 与 2.4 一样使用候选容量上界。
+shape 下 $K_{b,i,g}^{\mathrm{eff}}<K$。当前 `get_tflops()` 与 2.4 一样使用候选容量上界。
 
-### 2.6 `rwkv_mm_sparsity`
+## 3. 访存量类
 
-涉及源码：
+### 3.0 `rwkv_mm_sparsity`
 
-- [benchmark 入口](./test_rwkv_mm_sparsity.py)
-- [产品入口与 kernel](../src/flag_gems/fused/rwkv_mm_sparsity.py)
-
-#### 2.6.1 主计算与公式
-
-输入 $k$ 的 shape 为 $[M]$，$v$ 的 shape 为 $[M,N]$，输出等价于：
-
-$$
-o=v^Tk
-$$
-
-kernel 先判断 $k_i\ne0$，只为非零行加载 $v_{i,:}$。每个非零 $k_i$ 对
-$N$ 个输出执行一次乘加，因此：
+输入 $k$ 的 shape 为 $[M]$，$v$ 的 shape 为 $[M,N]$。kernel 读取全部 $k$，
+只为非零 $k_i$ 读取对应的 $v_{i,:}$，最后写回 $N$ 个输出元素。因此：
 
 $$
 \boxed{
-\text{logical\_flops}=2\operatorname{nnz}(k)N
-=2\operatorname{count\_nonzero}(k)\times v.\operatorname{shape}[1]
+\text{logical\_bytes}
+=B(k)+\operatorname{count\_nonzero}(k)\times N\times
+\operatorname{element\_size}(v)+B(o)
 }
 $$
 
-零值判断、mask 和输出写回不计入计算量类的主矩阵 FLOPs。公式按输入的实际
-非零数计算，而不是按 benchmark 设定的期望稀疏率估算。
-
----
-
-## 3. 访存量类
+`count_nonzero(k)` 在 benchmark 计时区间之外求值并缓存，公式使用实际非零数，
+不再用固定的 5% 密度估算。
 
 ### 3.1 `silu_and_mul`
 
@@ -562,7 +547,7 @@ $$
 \text{Load}=2Nb,\qquad \text{Store}=Nb
 $$
 
-这与当前 YAML 的表达式等价：
+这与当前 benchmark `get_gbps()` 的表达式等价：
 
 $$
 2\times\operatorname{nbytes}(A)+\operatorname{nbytes}(B)=3Nb
@@ -659,7 +644,7 @@ $$
 `q` 和 `k` 的系数 2 表示输入读取与输出写回。kernel 中同一输入元素也可能作为
 另一个位置的 rotated value 再次 load；这属于实现加载方式，不按物理 load 次数
 放大 logical bytes。若调用方提供 `position_ids`，完整外部输入口径还应加上
-$B(\text{position\_ids})$；当前 benchmark/YAML 未覆盖该分支。原地模式同样需要
+$B(\text{position\_ids})$；当前 benchmark 指标未覆盖该分支。原地模式同样需要
 一次读和一次写，因此主项不变。
 
 ### 3.4 `concat_and_cache_mla`
@@ -877,7 +862,7 @@ $$
 第一项是 split semaphore，第二项是每条序列的动态 split metadata。在 CPU
 路径中 `arch=0`，所以 $\sigma=\mathbb{1}_{S>1}$。
 
-#### 3.11.2 实现推导公式与 YAML 差异
+#### 3.11.2 实现推导公式与 benchmark 指标差异
 
 输出 dtype 固定为 int32，每元素 4 bytes，因此 benchmark 当前输入分支的完整
 外部读写公式是：
@@ -888,7 +873,7 @@ $$
 }
 $$
 
-当前 YAML 只有 $B(\text{seqused\_k})$，遗漏了 `scheduler_metadata` 的输出写回。
+当前 `get_gbps()` 只有 $B(\text{seqused\_k})$，遗漏了 `scheduler_metadata` 的输出写回。
 若后续 benchmark 传入 `seqused_q`、累积长度或 `leftpad_k` 等可选 tensor，还应
 把实际读取的这些 tensor 加入公式。入口内部创建的 block-count 临时 tensor 不计。
 
@@ -971,7 +956,7 @@ $$
 
 #### 3.13.2 禁用原因
 
-当前 YAML 将该项设为 disabled：benchmark 分配的输出 buffer capacity 与产品
+该算子保持 disabled：benchmark 分配的输出 buffer capacity 与产品
 路径要求尚未同步，可能不足。在修复输入/输出容量前保留公式，但不报告带宽指标。
 
 ### 3.14 `moe_sum`
@@ -1043,7 +1028,7 @@ $$
 
 cache 旧值不需读取。当前 benchmark 使用 `kv_cache_dtype="auto"`；若启用量化
 cache 并在 kernel 中读取 `k_scale/v_scale`，完整公式还应加对应 scale tensor
-的读取字节数，当前 YAML 未覆盖该分支。
+的读取字节数，当前 `get_gbps()` 未覆盖该分支。
 
 ### 3.17 `reshape_and_cache_flash`
 
@@ -1190,7 +1175,7 @@ $$
 #### 3.21.2 禁用原因
 
 benchmark 当前额外传入 `renormalize`，而产品 `topk_softmax` 接口只接收四个
-tensor 参数，参数表不匹配。因此 YAML 将该项禁用；公式保留用于接口同步后的
+tensor 参数，参数表不匹配。因此该 benchmark 保持禁用；公式保留用于接口同步后的
 覆盖，不在当前运行中报告。
 
 ### 3.22 `weight_norm`（当前禁用）
@@ -1217,23 +1202,23 @@ $$
 }
 $$
 
-内部 `norm` buffer 不作为外部 tensor 统计。当前 YAML 写为
+内部 `norm` buffer 不作为外部 tensor 统计。本次保留的未启用逻辑口径为
 $2B(v)+B(g)$，只包含一次语义输入读取和一次输出写回，少计了实现的第二遍
 $v$ 扫描；文档采用上面的实现推导式。
 
 #### 3.22.2 禁用原因
 
 当前 accuracy coverage 已跳过，且 SVE lowering 路径失败，所以该公式项保持
-disabled。修复执行路径后，还应同步 YAML 中的 $v$ 系数再启用带宽指标。
+disabled。修复执行路径后，还应同步 benchmark `get_gbps()` 中的 $v$ 系数再启用带宽指标。
 
 ---
 
 ## 4. 覆盖与差异汇总
 
-| 类别 | YAML 算子数 | 已展开 | 当前启用 | 当前禁用 |
+| 类别 | 算子清单数 | 已展开 | 当前启用 | 当前禁用 |
 |---|---:|---:|---:|---:|
-| 计算量类 | 6 | 6 | 6 | 0 |
-| 访存量类 | 22 | 22 | 19 | 3 |
+| 计算量类 | 5 | 5 | 5 | 0 |
+| 访存量类 | 23 | 23 | 20 | 3 |
 
 需要在维护公式时重点保留的边界：
 
@@ -1241,7 +1226,7 @@ disabled。修复执行路径后，还应同步 YAML 中的 $v$ 系数再启用�
   pair 计数。
 - 两个 sparse MLA 公式使用配置的 top-k 容量作为稳定上界；若要统计语义有效
   工作量，应改用通过下标和 causal mask 的实际候选数。
-- `get_scheduler_metadata` 的实现推导式比 YAML 多输出 metadata 写回。
+- `get_scheduler_metadata` 的实现推导式比当前 `get_gbps()` 多输出 metadata 写回。
 - `reshape_and_cache*` 的当前公式对应 benchmark 的 `kv_cache_dtype="auto"`；量化
   cache 分支需要加入 scale 读取。
-- `weight_norm` 的实现推导式比 YAML 多一遍 $v$ 扫描，且该算子当前处于禁用状态。
+- `weight_norm` 的实现推导式比未启用逻辑口径多一遍 $v$ 扫描，且该算子当前处于禁用状态。

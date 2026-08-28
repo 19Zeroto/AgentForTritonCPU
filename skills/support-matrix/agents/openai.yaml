@@ -1,0 +1,4 @@
+interface:
+  display_name: "Operator Support Matrix"
+  short_description: "Generate Triton and FlagGems support matrices"
+  default_prompt: "Use $support-matrix to generate evidence-backed Triton and FlagGems operator coverage reports."

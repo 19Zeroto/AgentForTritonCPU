@@ -1,0 +1,4 @@
+interface:
+  display_name: "FlagGems Benchmark Profile"
+  short_description: "Profile FlagGems CPU benchmark performance"
+  default_prompt: "Use $flaggems-benchmark-profile to collect and summarize performance evidence for this FlagGems benchmark."
