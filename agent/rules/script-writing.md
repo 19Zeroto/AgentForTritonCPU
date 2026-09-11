@@ -34,7 +34,7 @@
 #!/usr/bin/env bash
 # 用法：bash <脚本路径> --config <配置文件>
 # 示例：bash <repo>/scripts/run.sh --config "$HOME/config.yaml"
-# 设计说明：docs/run-script.md
+# 设计说明：<skill>/references/workflow.md
 ```
 
 ## 环境路径

@@ -33,7 +33,7 @@ DEFAULT_BAD_COMMIT="HEAD"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 AGENTFORTRITONCPU_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-AGENT_DIR="${AGENT_DIR:-$(cd "$AGENTFORTRITONCPU_DIR/.." && pwd)}"
+AGENT_DIR="${AGENT_DIR:-${HOME}/agent}"
 DEFAULT_REPO="${TRITON_REPO_DIR:-$AGENT_DIR/triton-cpu}"
 DEFAULT_ENV_SCRIPT="$AGENTFORTRITONCPU_DIR/skills/environment/scripts/triton-cpu-env.sh"
 

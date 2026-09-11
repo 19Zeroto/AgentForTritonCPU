@@ -1,35 +1,33 @@
 # AgentForTritonCPU
 
-Triton CPU 专用 Agent tooling/spec 仓。保存长期规则、任务 Spec、提示词、
-测试与分析脚本；产品源码继续保存在相邻的 `triton-cpu` 仓。
+Triton CPU 工作区的规则、任务 Spec、playbook、skill 和分析脚本仓库。产品源码
+位于同一工作区的相邻 `triton-cpu/` 仓库，不复制到本仓。
 
 ## Layout
 
 ```text
 AgentForTritonCPU/
+├── AGENTS.md                 # 工作区入口
 ├── agent/
-│   ├── AGENTS.md
-│   ├── specs/
-│   │   └── tasks/
-│   ├── rules/
-│   ├── playbooks/
-│   ├── references/
-│   └── prompts/
+│   ├── AGENTS.md             # 任务路由与共享约束
+│   ├── rules/                # 通用规则
+│   ├── playbooks/            # 调试、测试、性能流程
+│   ├── references/           # 项目地图、失败库、benchmark 约定
+│   └── specs/tasks/          # 一次性任务契约
 ├── skills/
-│   ├── test-suite/
-│   ├── environment/
-│   ├── commit-bisect/
+│   ├── environment/          # 环境加载与初始 bootstrap
+│   ├── test-suite/            # 测试运行与结果汇总
+│   ├── triton-cpu-rebuild/   # 通用重编译及可选 dgeglu 配方
 │   ├── flaggems-benchmark-profile/
 │   ├── flaggems-kernel-perf/
 │   ├── support-matrix/
-│   ├── silu-pointwise/
-│   └── sme-benchmark/
-└── docs/
+│   └── commit-bisect/
+└── docs/                     # 面向人的完整阅读版文档
 ```
 
 ## Workspace
 
-默认目录关系：
+默认布局如下：
 
 ```text
 $AGENT_DIR/
@@ -40,29 +38,19 @@ $AGENT_DIR/
 └── cache/
 ```
 
-`AGENT_DIR` 默认是 `$HOME/agent`，也可显式设置以替换工作区/安装根目录。常用覆盖变量：
-`TRITON_REPO_DIR`、`LLVM_INSTALL_DIR`、`VENV_DIR`、`RUN_DIR`、`LOG_ROOT`。
+`AGENT_DIR` 默认是 `$HOME/agent`；脚本会从自身位置推导
+`AGENTFORTRITONCPU_DIR`，也可以显式覆盖 `TRITON_REPO_DIR`、`LLVM_INSTALL_DIR`、
+`VENV_DIR`、`RUN_DIR` 和 `LOG_ROOT`。
 
-加载环境：
+加载共享环境：
 
 ```bash
 source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
 ```
 
-每个 `skills/<name>/SKILL.md` 是 AI 统一入口；脚本在 `scripts/`，详细资料在
-`references/`，UI 元数据在 `agents/openai.yaml`。测试入口见
-[test-suite/SKILL.md](skills/test-suite/SKILL.md)。完整任务路由见
-[agent/AGENTS.md](agent/AGENTS.md)。新任务 Spec 保存到
-[`agent/specs/tasks/`](agent/specs/tasks/)。
-
-这些 skill 仅供 Triton CPU 工作流使用，不安装为全局 skill，也不依赖 Codex
-默认发现；`agent/AGENTS.md` 和相关 playbook 根据任务显式路由到对应入口。
-
-该布局遵循 [Agent Skills specification](https://agentskills.io/specification)：
-只在发现阶段读取 `SKILL.md` 元数据，触发后再加载工作流，并按需读取
-`references/` 或执行 `scripts/`。
-
-## Output policy
-
-日志、缓存、状态文件、benchmark 结果不得默认写入本仓。脚本默认使用工作区
-`logs/`、`cache/` 或 `/tmp`；需要保留自定义位置时显式传入输出目录。
+从 [docs/README.md](docs/README.md) 开始人类阅读；从
+[agent/AGENTS.md](agent/AGENTS.md) 开始 Agent 任务路由。各
+`skills/<name>/SKILL.md` 是对应工作流入口，详细执行约定放在其
+`references/` 中。
+日志、缓存和 benchmark 结果默认写入工作区 `logs/`、`cache/` 或 `/tmp`，不写入
+本仓源码树。

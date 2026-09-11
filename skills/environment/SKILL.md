@@ -26,8 +26,8 @@ description: Prepare and verify the Triton CPU development environment by activa
 
 - Execute `scripts/triton-cpu-env.sh`; never launch it as a child process when
   exported variables must remain available.
-- Read `references/design.md` only when modifying environment detection,
-  activation order, or exported variables.
+- Read `references/bootstrap.md` only when preparing a new machine or an LLVM
+  install that does not yet exist.
 
 ## Completion checks
 

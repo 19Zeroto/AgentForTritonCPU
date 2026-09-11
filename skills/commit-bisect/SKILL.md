@@ -29,9 +29,8 @@ description: Locate the first Triton CPU commit that breaks a reproducible pytes
 6. Confirm original checkout restoration and report first-bad commit plus log
    directory.
 
-## Resources
+## Resource
 
-- Execute `scripts/bisect_triton_commit.sh`.
-- Read `references/design.md` before changing checkout restoration, probe
-  classification, build steps, or log layout.
-
+Execute `scripts/bisect_triton_commit.sh`. If changing checkout restoration,
+probe classification, build steps, or log layout, preserve the workflow and
+log contracts stated above and update the script help text in the same change.

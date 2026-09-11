@@ -1,75 +1,73 @@
+# Triton CPU 构建指南
 
-# Configuring the Python Environment
+本文面向首次准备工作区的开发者。已经存在可用 LLVM、Python 和 Triton 安装时，
+直接使用环境脚本和 rebuild skill，不要重复初始化。
 
-First, you need to prepare a Python Environment and install the following dependencies. Python 3.11 is recommanded. Please double-check whether the versions of these dependencies meet the requirements, especially CMake and Ninja.
+## 工作区布局
 
-```bash
-pip install "setuptools>=40.8.0"
-pip install wheel
-pip install "cmake>=3.18,<4.0"
-pip install "ninja>=1.11.1"
-pip install "pybind11>=2.13.1"
-pip install lit
-pip install nanobind
-pip install numpy
-pip install pytest-xdist
-pip install torch==2.10.0
+```text
+$AGENT_DIR/
+├── AgentForTritonCPU/
+├── triton-cpu/
+├── llvm-project/
+├── logs/
+└── cache/
 ```
 
-Because the required AArch64 compiler-rt runtime support must be built with clang, use clang to compile the clang sources themselves. To download clang, you need:
+`AGENT_DIR` 默认是 `$HOME/agent`，也可以显式设置。产品源码和 Agent 仓库保持
+相邻，不要把 Agent 文件复制进 `triton-cpu`。
 
-`yum install -y llvm-toolset-17-clang llvm-toolset-17-compiler-rt`
+## Python 环境
 
-clang17 is installed in '/opt/openEuler/llvm-toolset-17/root/usr/bin/clang'
-(920F server on blue zone already installed clang 17 toolset, so just skip this step)
+使用 Python 3.11，并按当前 `triton-cpu` checkout 的要求安装 setuptools、wheel、
+CMake、Ninja、pybind11、lit、nanobind、NumPy、pytest-xdist 和 PyTorch。环境不在
+默认位置时设置 `VENV_DIR`；不要把某个机器的 Conda 路径写进仓库文档。
 
-# Building the LLVM Compiler
-Activate your Python environment, put the openEuler LLVM 20 source code and build it.
+## LLVM/MLIR
+
+将目标 openEuler LLVM 源码放在 `$AGENT_DIR/llvm-project`，构建并安装到
+`$AGENT_DIR/llvm-project/install`。典型配置如下，编译器、分支和镜像按当前机器
+调整：
+
 ```bash
-export AGENT_DIR="${AGENT_DIR:-$HOME/agent}"
-cd "$AGENT_DIR"
-git clone https://gitcode.com/openeuler/llvm-project.git -b dev_20.1.8 --depth=1
-cd llvm-project
-mkdir build && cd build
-cmake -G Ninja -DCMAKE_C_COMPILER=/opt/openEuler/llvm-toolset-17/root/usr/bin/clang -DCMAKE_CXX_COMPILER=/opt/openEuler/llvm-toolset-17/root/usr/bin/clang++ -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON ../llvm -DLLVM_ENABLE_PROJECTS="mlir;llvm;clang;clang-tools-extra;lld;compiler-rt;openmp" -DLLVM_TARGETS_TO_BUILD="AArch64;NVPTX;AMDGPU" -DCMAKE_INSTALL_PREFIX=../install -DMLIR_ENABLE_BINDINGS_PYTHON=ON -DPython3_EXECUTABLE=$(which python3) -DMLIR_INCLUDE_INTEGRATION_TESTS=ON -DLLVM_ENABLE_RTTI=ON -DBUILD_SHARED_LIBS=OFF
-ninja
-ninja install
+AGENT_DIR="${AGENT_DIR:-$HOME/agent}"
+LLVM_SOURCE_DIR="$AGENT_DIR/llvm-project"
+LLVM_BUILD_DIR="$LLVM_SOURCE_DIR/build"
+LLVM_INSTALL_DIR="$LLVM_SOURCE_DIR/install"
 
-# Make sure python bindings have been generated.
-file tools/mlir/python_packages/mlir_core
-
-# if it does not exist, force build with:
-ninja check-mlir-python
+cmake -G Ninja -S "$LLVM_SOURCE_DIR/llvm" -B "$LLVM_BUILD_DIR" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$LLVM_INSTALL_DIR" \
+  -DLLVM_ENABLE_ASSERTIONS=ON \
+  -DLLVM_ENABLE_PROJECTS='mlir;llvm;clang;clang-tools-extra;lld;compiler-rt;openmp' \
+  -DLLVM_TARGETS_TO_BUILD='AArch64;NVPTX;AMDGPU' \
+  -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+  -DMLIR_INCLUDE_INTEGRATION_TESTS=ON \
+  -DLLVM_ENABLE_RTTI=ON \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DPython3_EXECUTABLE="$(command -v python3)"
+ninja -C "$LLVM_BUILD_DIR"
+ninja -C "$LLVM_BUILD_DIR" install
 ```
-It is important to note that we are using the MLIR python bindings so the python version used to compile llvm (in this case the one pointed by $(which python3)) must be same we use to run triton.
 
-# Building the Triton Compiler
-Pull the Triton-CPU source code and build it.
+编译 LLVM Python binding 和运行 Triton 必须使用同一个 Python 环境。
+
+## Triton CPU
+
 ```bash
-cd "$AGENT_DIR"
-git clone https://gitcode.com/openeuler/triton-cpu.git
-cd triton-cpu
-git submodule init
-git submodule update
+AGENT_DIR="${AGENT_DIR:-$HOME/agent}"
 export LLVM_INSTALL_DIR="$AGENT_DIR/llvm-project/install"
-export LLVM_INCLUDE_DIRS=$LLVM_INSTALL_DIR/include
-export LLVM_LIBRARY_DIR=$LLVM_INSTALL_DIR/lib
-export LLVM_SYSPATH=$LLVM_INSTALL_DIR
-export PYTHONPATH=$LLVM_INSTALL_DIR/python_packages/mlir_core
-export PATH=$LLVM_INSTALL_DIR/bin:$PATH
-export TRITON_BUILD_WITH_CLANG_LLD=true
-export TRITON_PLUGIN_DIRS=$(pwd)/triton-shared
-pip install --no-build-isolation -e python
+export TRITON_REPO_DIR="$AGENT_DIR/triton-cpu"
+source "$AGENT_DIR/AgentForTritonCPU/skills/environment/scripts/triton-cpu-env.sh"
+python3 -m pip install --no-build-isolation -e "$TRITON_REPO_DIR/python"
 ```
 
-If building stall and shows a time out when downloading dependencies from github.com such as googletests:
-	In python/setup.py, force a build option by commenting out the condition.(alternatively, find how to set offline_build)
-# Test
-Before starting the test, you may need to install some dependencies: pytest-xdist and torch. After the preparation is complete, set the following environment variables:
+环境脚本会导出 LLVM、TritonShared、FlagGems、缓存和共享 CPU backend 路径。
+首次安装完成后，后续编译使用：
+
 ```bash
-export TRITON_DISABLE_LINE_INFO=1
-export TRITON_USE_SHARED_BACKEND=1
-export LLVM_BINARY_DIR="$AGENT_DIR/llvm-project/install/bin/"
-export PYTHONPATH="$AGENT_DIR/llvm-project/install/python_packages/mlir_core"
-export TRITON_SHARED_OPT_PATH="$AGENT_DIR/triton-cpu/python/build/cmake.linux-{arch}-cpython-{version}/third_party/triton_shared/tools/triton-shared-opt/triton-shared-opt"
+bash "$AGENT_DIR/AgentForTritonCPU/skills/triton-cpu-rebuild/scripts/rebuild.sh" --dry-run
 ```
+
+确认干运行命令无误后再去掉 `--dry-run`。该流程不会自动运行 correctness 或
+benchmark；验证请使用测试或性能文档，并显式选择当前机器的线程和 NUMA 绑定。

@@ -35,7 +35,7 @@ from typing import Optional
 SCRIPT_DIR = Path(__file__).resolve().parent
 AGENTFORTRITONCPU_DIR = SCRIPT_DIR.parent.parent.parent
 AGENT_DIR = Path(
-    os.environ.get("AGENT_DIR", AGENTFORTRITONCPU_DIR.parent)
+    os.environ.get("AGENT_DIR", Path.home() / "agent")
 ).expanduser().resolve()
 TRITON_REPO_DIR = Path(
     os.environ.get("TRITON_REPO_DIR", AGENT_DIR / "triton-cpu")
@@ -239,7 +239,9 @@ def run_file(abs_file: str, rel_file: str, threads: int,
     env["PYTHONWARNINGS"] = "ignore"
     env["COVERAGE_PROCESS_START"] = ""
 
-    r = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    r = subprocess.run(
+        cmd, capture_output=True, text=True, env=env, cwd=TRITON_REPO_DIR
+    )
 
     duration = time.time() - t0
     summary = parse_pytest_summary(r.stdout + r.stderr)

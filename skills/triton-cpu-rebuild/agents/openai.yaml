@@ -1,0 +1,4 @@
+interface:
+  display_name: "Triton CPU Rebuild"
+  short_description: "Rebuild LLVM and reinstall Triton CPU"
+  default_prompt: "Use $triton-cpu-rebuild to rebuild the local toolchain and reinstall Triton CPU."

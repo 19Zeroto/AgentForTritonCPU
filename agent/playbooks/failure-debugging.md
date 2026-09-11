@@ -1,3 +1,14 @@
+---
+name: failure-debugging
+description: 定位测试、编译、lowering、运行时或 benchmark 的首个根因和所属层级
+required_context:
+  - agent/rules/core.md
+  - agent/rules/script-writing.md
+  - agent/rules/testing.md
+  - agent/rules/reporting.md
+  - agent/references/failure-library.md
+---
+
 # 失败调试 Playbook
 
 ## 使用条件

@@ -79,7 +79,7 @@ $AGENT_DIR/
 
 | 变量 | 作用 | 使用场景 |
 |------|------|---------|
-| `TRITON_CPU_BACKEND=1` | 激活 CPU 后端 | 运行 CPU 后端时必须设置 |
+| `TRITON_USE_SHARED_BACKEND=1` | 激活 TritonShared CPU 后端 | 运行共享 CPU 后端时设置；环境脚本会默认导出 |
 | `TRITON_SHARED_DUMP_PATH=<path>` | 输出各阶段 MLIR dump | 调试 lowering 问题 |
 | `TRITON_PRINT_COMPILE_TIME=1` | 打印各阶段编译耗时 | 性能分析 |
 | `LLVM_BINARY_DIR=<path>` | LLVM 工具链路径 | 编译时需要 llc 等工具 |

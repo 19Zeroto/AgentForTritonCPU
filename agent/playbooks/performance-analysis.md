@@ -9,7 +9,6 @@ required_context:
   - agent/references/project-map.md
   - agent/references/benchmark-system.md
   - agent/references/failure-library.md
-  - agent/playbooks/agent-handoff.md
 ---
 
 # 性能分析 Playbook
@@ -36,16 +35,16 @@ required_context:
    不用于 kernel 热点分析；需要 kernel 级证据时使用 `perf` 或其他 profiling 工具。
 3. 每个瓶颈结论必须引用具体指标、shape 或日志证据；区分已证实根因与待验证假设。
 4. 按影响范围、回归风险和预期收益排序，不使用无数据支撑的 rough estimate。
-5. 环境问题转入 `environment-setup.md`；算子配置或 kernel 问题转入 `flaggems-fix.md`；lowering/tiling 问题转入 `ir-lowering.md`。
+5. 环境问题转入 `skills/environment/SKILL.md`；算子配置或 kernel 问题转入
+   `flaggems-fix.md`；lowering/tiling 问题转入 `ir-lowering.md`。
 6. 需要补采通用 benchmark、perf 或编译耗时时，读取
    `skills/flaggems-benchmark-profile/SKILL.md`。
 7. 需要把 `perf.data` 归因到生成 kernel 的周期热点、子调用和进程外部开销，
    或输出指令级瓶颈报告时，读取 `skills/flaggems-kernel-perf/SKILL.md`。
-8. 需要运行、重跑、导出或修改 fusion compute/memory 指标与公式时，读取
-   `skills/flaggems-fusion-metrics/SKILL.md`。
-9. 目标为 `silu_and_mul`/`mul` variant 时读取
-   `skills/silu-pointwise/SKILL.md`；目标为 matmul、BLAS、baddbmm 或
-   Stream-K 性能时读取 `skills/sme-benchmark/SKILL.md`。
+8. `silu_and_mul` 的历史实验只作为案例证据，按
+   `skills/flaggems-benchmark-profile/SKILL.md` 路由读取；matmul、BLAS、
+   baddbmm 或 Stream-K 仍使用通用 profiling 与 lowering 流程，不引用不存在的
+   专项 skill。
 
 ## 产出
 
@@ -55,4 +54,4 @@ required_context:
 - 按优先级排序的后续任务
 - 需要其他 Playbook 时的转介信息
 
-Benchmark 标准执行命令尚未定义；本 Playbook 不提供或推测命令。
+标准执行契约和最小命令由 `agent/references/benchmark-system.md` 维护。

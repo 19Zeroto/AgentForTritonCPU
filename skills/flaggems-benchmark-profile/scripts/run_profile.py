@@ -45,7 +45,7 @@ PROFILING_DIR = SCRIPT_DIR / "profiling"
 DEFAULT_CONFIG = SCRIPT_DIR / "profiling_config.yaml"
 AGENTFORTRITONCPU_DIR = SCRIPT_DIR.parent.parent.parent
 AGENT_DIR = Path(
-    os.environ.get("AGENT_DIR", AGENTFORTRITONCPU_DIR.parent)
+    os.environ.get("AGENT_DIR", Path.home() / "agent")
 ).expanduser().resolve()
 TRITON_CPU_ROOT = Path(
     os.environ.get(

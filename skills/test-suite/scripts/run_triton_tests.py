@@ -47,7 +47,7 @@ BUILTIN_MARKERS = frozenset({
 SCRIPT_DIR = Path(__file__).resolve().parent
 AGENTFORTRITONCPU_DIR = SCRIPT_DIR.parent.parent.parent
 AGENT_DIR = Path(
-    os.environ.get("AGENT_DIR", AGENTFORTRITONCPU_DIR.parent)
+    os.environ.get("AGENT_DIR", Path.home() / "agent")
 ).expanduser().resolve()
 TRITON_REPO_DIR = Path(
     os.environ.get("TRITON_REPO_DIR", AGENT_DIR / "triton-cpu")
@@ -247,8 +247,14 @@ def count_tests_for_item(file_path: str, marker: str):
         "-p", "no:cacheprovider",
     ]
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True,
-                           timeout=300, env=_collect_env())
+        r = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            env=_collect_env(),
+            cwd=TRITON_REPO_DIR,
+        )
         count = 0
         for line in r.stdout.splitlines():
             if not line.strip():
@@ -406,7 +412,9 @@ def run_work_item(abs_file: str, rel_file: str, marker: str, count: int,
     env["PYTHONWARNINGS"] = "ignore"
     env["COVERAGE_PROCESS_START"] = ""
 
-    r = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    r = subprocess.run(
+        cmd, capture_output=True, text=True, env=env, cwd=TRITON_REPO_DIR
+    )
 
     duration = time.time() - t0
     summary = parse_pytest_summary(r.stdout + r.stderr)

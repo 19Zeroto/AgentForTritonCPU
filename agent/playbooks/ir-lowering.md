@@ -11,7 +11,6 @@ required_context:
   - agent/references/failure-library.md
   - agent/playbooks/failure-debugging.md
   - agent/playbooks/testing.md
-  - agent/playbooks/agent-handoff.md
 ---
 
 # IR/Lowering 修复 Playbook

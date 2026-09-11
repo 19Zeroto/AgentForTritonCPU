@@ -19,14 +19,16 @@ global:
   # null means use each benchmark class's default dtypes.
   dtypes: null
 
+# Portable safety baseline. Copy this file outside the repository and set
+# binding/thread values explicitly before drawing performance conclusions.
 system:
   triton_cache_dir: null
   clear_triton_cache: true
   numa:
-    enabled: true
-    cpunodebind: 3
-    membind: 3
-  cpu_affinity: "456-487"
+    enabled: false
+    cpunodebind: null
+    membind: null
+  cpu_affinity: null
   env_vars:
     OMP_NUM_THREADS: "1"
     MKL_NUM_THREADS: "1"

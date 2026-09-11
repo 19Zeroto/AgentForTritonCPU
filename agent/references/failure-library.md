@@ -1,6 +1,7 @@
 # 故障模式库
 
-> 本文从 `ai-fix-methodology.md` 提取结构化摘要，供 Agent 快速匹配故障模式。完整的代表 PR 列表和详细分析见原文件。
+本文维护当前故障分类和修复边界。历史 MR 搜索入口见
+`failure-history.md`；历史补丁不是当前行为的规范来源。
 
 ## 故障分类决策树
 
@@ -136,6 +137,6 @@
 | D. Bufferization | `ir-lowering.md` | — |
 | E. TritonShared lowering | `ir-lowering.md` | — |
 | F. 测试/benchmark | `testing.md` / `performance-analysis.md` | `flaggems-fix.md`（算子失败） |
-| G. 并发/调试 | `failure-debugging.md` | `environment-setup.md` |
-| H. 性能 | `performance-analysis.md` | `environment-setup.md` / `ir-lowering.md` |
+| G. 并发/调试 | `failure-debugging.md` | `skills/environment/SKILL.md` |
+| H. 性能 | `performance-analysis.md` | `skills/environment/SKILL.md` / `ir-lowering.md` |
 | I. 上游同步 | `flaggems-fix.md` | `ir-lowering.md`（共享 compiler 路径） |

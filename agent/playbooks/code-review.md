@@ -9,7 +9,6 @@ required_context:
   - agent/rules/reporting.md
   - agent/references/project-map.md
   - agent/references/failure-library.md
-  - agent/playbooks/agent-handoff.md
 ---
 
 # 代码审查 Playbook

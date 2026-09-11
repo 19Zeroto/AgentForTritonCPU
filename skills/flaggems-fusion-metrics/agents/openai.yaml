@@ -1,4 +1,0 @@
-interface:
-  display_name: "FlagGems Fusion Metrics"
-  short_description: "Run fusion benchmarks and export metric CSVs"
-  default_prompt: "Use $flaggems-fusion-metrics to run serial fusion benchmarks or export tflops/gbps reports from record logs."

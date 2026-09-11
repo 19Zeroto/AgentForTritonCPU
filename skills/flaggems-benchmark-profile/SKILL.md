@@ -8,8 +8,10 @@ description: Profile Triton CPU FlagGems benchmarks with per-operator or per-sha
 ## Workflow
 
 1. Load the `environment` skill.
-2. Confirm target benchmark, dtype, mode (default: `operator`), level, warmup,
-   iterations, NUMA node, CPU affinity, and external output path.
+2. Confirm target benchmark, dtype, mode (`operator` recommended), level,
+   warmup, iterations, NUMA node, CPU affinity, thread counts, and external
+   output path. Copy the checked-in config to an external path before adding
+   host-specific values.
    The retained `kernel` mode clears benchmark cache through `do_bench` around
    the full callable; it is not an isolated kernel measurement and is never
    recommended. Use `perf` or another profiling tool for kernel analysis.
@@ -34,8 +36,10 @@ description: Profile Triton CPU FlagGems benchmarks with per-operator or per-sha
 - Execute `scripts/tools/perf_heatmap.py` to visualize existing perf output.
 - Read `references/usage.md` for full CLI/config/output details.
 - Read `references/design.md` only when changing profiler architecture.
-- Read `references/tflops.md` when adding or reviewing FLOPs formulas.
+- Read `references/estimated-metrics.md` when adding or reviewing profiler-side
+  fallback formulas. Benchmark-local metrics remain authoritative.
 - Read `../../agent/references/benchmark-system.md` when interpreting CPU
   pipeline effects.
-- Read `references/kunpeng_silu_and_mul_optimization_memo.md` only for that
-  historical optimization investigation.
+- Read `../../agent/references/benchmark-shapes.md` when changing shape inputs.
+- Read `references/silu-and-mul-case-study.md` only when its historical evidence
+  is relevant to a current investigation.

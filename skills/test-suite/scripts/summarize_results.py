@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Summarize results from the v3 state format produced by
-scripts/run_triton_tests.py.
+Summarize the file-level or marker-level state produced by this skill.
 
 Outputs a table grouped by file, then lists failed items with details.
 """
@@ -15,7 +14,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 AGENTFORTRITONCPU_DIR = SCRIPT_DIR.parent.parent.parent
 AGENT_DIR = Path(
-    os.environ.get("AGENT_DIR", AGENTFORTRITONCPU_DIR.parent)
+    os.environ.get("AGENT_DIR", Path.home() / "agent")
 ).expanduser().resolve()
 DEFAULT_STATE_FILE = str(
     AGENT_DIR
@@ -60,14 +59,24 @@ def main():
 
     for file in sorted(by_file):
         entries = by_file[file]
-        total = sum(e.get("count", 0) for e in entries)
+        total = sum(
+            e.get(
+                "count",
+                e.get("passed", 0)
+                + e.get("failed", 0)
+                + e.get("skipped", 0)
+                + e.get("error", 0),
+            )
+            for e in entries
+        )
         passed = sum(e.get("passed", 0) for e in entries)
         failed = sum(e.get("failed", 0) for e in entries)
         skipped = sum(e.get("skipped", 0) for e in entries)
         duration = sum(e.get("duration", 0.0) for e in entries)
         fname = Path(file).name
         rows.append((fname, duration, total, passed, failed, skipped))
-        if failed > 0:
+        errors = sum(e.get("error", 0) for e in entries)
+        if failed > 0 or errors > 0:
             all_passed = False
 
     # Column widths
@@ -114,13 +123,20 @@ def main():
     print("Failed items:")
     for key, entry in results.items():
         failed = entry.get("failed", 0)
-        if failed == 0:
+        errors = entry.get("error", 0)
+        if failed == 0 and errors == 0:
             continue
         fname = Path(entry["file"]).name
-        marker = entry["marker"]
-        total = entry.get("count", 0)
+        marker = entry.get("marker", "<file>")
+        total = entry.get(
+            "count",
+            entry.get("passed", 0) + failed + entry.get("skipped", 0) + errors,
+        )
         dur = entry.get("duration", 0.0)
-        print(f"  {fname} - {marker}    failed={failed}/{total}  duration={fmt_dur(dur)}")
+        print(
+            f"  {fname} - {marker}    failed={failed}/{total} "
+            f"errors={errors}  duration={fmt_dur(dur)}"
+        )
         if entry.get("log"):
             print(f"    log: {entry['log']}")
 

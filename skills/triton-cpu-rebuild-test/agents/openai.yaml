@@ -1,4 +1,0 @@
-interface:
-  display_name: "Triton CPU Rebuild Test"
-  short_description: "Reinstall Triton CPU and benchmark dgeglu"
-  default_prompt: "Rebuild triton-cpu after compiler changes and run the dgeglu float32 benchmark."

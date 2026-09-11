@@ -1,35 +1,35 @@
 ---
 name: test-suite
-description: Run, resume, and summarize Triton CPU FlagGems correctness tests with marker-level or file-level parallelism, controlled xdist workers, external state files, cache cleanup, and full-suite support. Use for FlagGems test execution, batch validation, resumable test runs, or result summaries.
+description: Run, resume, and summarize Triton CPU FlagGems correctness tests at file or pytest-marker granularity. Use for batch or full-suite validation; use the testing playbook directly for one or two targeted cases.
 ---
 
 # Run FlagGems Test Suites
 
-## Select an entrypoint
+## Choose the granularity
 
-- Use `scripts/run_triton_tests.py` for `(file, marker)` work items, marker
-  filtering, cached collection, and resume.
-- Use `scripts/run_simple_tests.py` for simpler file-level execution and
-  per-file Triton cache cleanup.
-- Use `scripts/summarize_results.py` to read marker-runner state.
-- Use `scripts/run_all_flaggems_tests.sh` for direct all-file pytest batches.
-- Use `scripts/run_flaggems_full.sh` for the full-suite wrapper.
+- `scripts/run_simple_tests.py`: file-level execution, including full-suite runs.
+  It supports include/exclude filters, resume state, per-file cache cleanup, and
+  optional complete logs.
+- `scripts/run_triton_tests.py`: `(file, pytest marker)` execution when smaller
+  resumable work items or marker filtering are needed.
+- `scripts/summarize_results.py`: summarize either runner's state file.
+
+Do not add another wrapper for “all tests”: invoking the file runner without an
+include filter already selects the full suite.
 
 ## Workflow
 
-1. Read `../../agent/rules/testing.md` and `../../agent/playbooks/testing.md`.
-2. Load the `environment` skill before running tests.
-3. Follow the test method defined by the testing playbook. Confirm
-   `OMP_NUM_THREADS <= 32` and xdist workers `<= 32`.
-4. Run the smallest relevant entrypoint. Start with `--help` when parameters are
-   unclear.
-5. Keep default state and logs under
-   `$AGENT_DIR/logs/AgentForTritonCPU/test-suite/`, or pass explicit paths.
-6. Summarize actual totals and first root-cause failure. Do not generalize a
-   targeted pass to full-suite success.
+1. Read `../../agent/rules/testing.md` and
+   `../../agent/playbooks/testing.md`, then load the `environment` skill.
+2. Run `--help` on the selected entrypoint. Set concurrency and
+   `OMP_NUM_THREADS` explicitly, each at or below 32.
+3. Keep state and logs outside source repositories. Defaults are below
+   `$AGENT_DIR/logs/AgentForTritonCPU/test-suite/`; use explicit paths when runs
+   must be isolated.
+4. Use resume only with the same test root and selection filters. State version
+   mismatches start a new empty state rather than guessing compatibility.
+5. Report actual totals, failed files or markers, and the first root-cause
+   failure. A targeted pass is not full-suite success.
 
-## Resources
-
-- Execute files under `scripts/` without reading their full source.
-- Read `references/design.md` before changing scheduling, state format, resume
-  behavior, logging, or cache cleanup.
+The runners stay in the foreground. Process supervision for a long run belongs
+to the caller's terminal or job system, not to this skill.

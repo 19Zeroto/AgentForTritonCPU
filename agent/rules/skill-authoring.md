@@ -8,7 +8,7 @@
 
 - Triton CPU 专用 skill 保存到本仓 `skills/<skill-name>/`，不安装到全局 skill
   目录，也不要求 Codex 默认扫描发现。
-- 工作区 `AGENTS.md` 进入本仓 `agent/AGENTS.md`；任务路由表再指向对应
+- 工作区 `AGENTS.md` 经仓根 `AGENTS.md` 进入本仓 `agent/AGENTS.md`；任务路由表再指向对应
   `skills/<skill-name>/SKILL.md`。`SKILL.md` 是该能力的统一 AI 入口。
 - 新增、重命名或改变 skill 适用范围时，必须同步更新 `agent/AGENTS.md` 的
   Skill routing 表和相关 playbook。没有文档路由的 skill 视为不可用。
@@ -33,8 +33,9 @@
    清单或校验值。
 2. 先按内容边界归类再移动；不得丢失源仓未提交的最新版本。
 3. 合并旧 README、入口说明和重复设计文档，由 `SKILL.md` 统一路由。
-4. 从脚本自身位置推导本仓及工作区；支持 `AGENT_DIR`、`TRITON_REPO_DIR`、
-   `LLVM_INSTALL_DIR` 和显式输出目录覆盖。
+4. 从脚本自身位置推导 `AGENTFORTRITONCPU_DIR`；`AGENT_DIR` 默认
+   `${HOME}/agent`。支持 `AGENT_DIR`、`TRITON_REPO_DIR`、`LLVM_INSTALL_DIR`
+   和显式输出目录覆盖。
 5. 清除旧仓名、旧目录层级、具体用户绝对路径和产品仓内 Agent 临时路径。
 6. 更新脚本 usage、reference、仓 README、Agent 路由及所有相对链接。
 7. 用户要求迁出时，确认目标内容完整后再删除源文件；不修改历史，不自动

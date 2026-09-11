@@ -15,7 +15,7 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parent
 AGENTFORTRITONCPU_DIR = SKILL_DIR.parent.parent.parent
 AGENT_DIR = Path(
-    os.environ.get("AGENT_DIR", AGENTFORTRITONCPU_DIR.parent)
+    os.environ.get("AGENT_DIR", Path.home() / "agent")
 ).expanduser().resolve()
 ROOT = Path(
     os.environ.get("TRITON_REPO_DIR", AGENT_DIR / "triton-cpu")

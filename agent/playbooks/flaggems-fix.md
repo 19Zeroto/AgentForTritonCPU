@@ -10,7 +10,6 @@ required_context:
   - agent/references/failure-library.md
   - agent/playbooks/failure-debugging.md
   - agent/playbooks/testing.md
-  - agent/playbooks/agent-handoff.md
 ---
 
 # FlagGems 算子修复 Playbook

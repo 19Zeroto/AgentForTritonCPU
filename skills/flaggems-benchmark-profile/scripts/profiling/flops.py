@@ -242,51 +242,51 @@ FORMULAS: dict[str, FormulaInfo] = {
         "Existing TexGluBackwardBenchmark formula.",
         ("dgeglu", "dglu", "dreglu", "dswiglu"),
     ),
-    "derived:blas_like": FormulaInfo(
-        "derived:blas_like",
-        "derived",
+    "estimated:blas_like": FormulaInfo(
+        "estimated:blas_like",
+        "estimated",
         "op-specific BLAS-like formula",
         "Reference formulas for BLAS-like ops not covered by current benchmark output.",
         ("addmv", "addr", "dot", "kron", "mv", "outer", "vdot"),
     ),
-    "derived:conv": FormulaInfo(
-        "derived:conv",
-        "derived",
+    "estimated:conv": FormulaInfo(
+        "estimated:conv",
+        "estimated",
         "2 * output_elements * (Cin / groups) * kernel_elements",
         "Reference convolution FLOPs.",
         ("conv1d", "conv2d", "conv3d", "conv_depthwise2d"),
     ),
-    "derived:pooling": FormulaInfo(
-        "derived:pooling",
-        "derived",
+    "estimated:pooling": FormulaInfo(
+        "estimated:pooling",
+        "estimated",
         "output_elements * kernel_elements",
         "Reference pooling work estimate.",
         ("avg_pool2d", "max_pool2d_with_indices"),
     ),
-    "derived:reduction": FormulaInfo(
-        "derived:reduction",
-        "derived",
+    "estimated:reduction": FormulaInfo(
+        "estimated:reduction",
+        "estimated",
         "op_factor * input_numel",
         "Reference reduction and softmax formulas.",
         tuple(sorted(REDUCTION_OP_FACTORS)),
     ),
-    "derived:normalization": FormulaInfo(
-        "derived:normalization",
-        "derived",
+    "estimated:normalization": FormulaInfo(
+        "estimated:normalization",
+        "estimated",
         "op_factor * input_numel",
         "Reference normalization formulas.",
         tuple(sorted(NORMALIZATION_FACTORS)),
     ),
-    "derived:fused_pointwise": FormulaInfo(
-        "derived:fused_pointwise",
-        "derived",
+    "estimated:fused_pointwise": FormulaInfo(
+        "estimated:fused_pointwise",
+        "estimated",
         "op_factor * numel",
         "Reference fused pointwise formulas.",
         tuple(sorted(FUSED_FACTORS)),
     ),
-    "derived:attention": FormulaInfo(
-        "derived:attention",
-        "derived",
+    "estimated:attention": FormulaInfo(
+        "estimated:attention",
+        "estimated",
         "4 * batch_heads * q_len * kv_len * head_dim",
         "Reference attention formula using QK^T and PV matmul main terms.",
         tuple(sorted(ATTENTION_OPS)),
@@ -333,7 +333,7 @@ def resolve_tflops(
     return TflopsInfo(
         tflops=tflops,
         flops=flops,
-        source="derived",
+        source="estimated",
         formula_id=formula_id,
     )
 
