@@ -1,0 +1,4 @@
+interface:
+  display_name: "FlagGems Kernel Perf"
+  short_description: "Attribute kernel cycle hotspots and call-tree costs"
+  default_prompt: "Use $flaggems-kernel-perf to identify and report the period-weighted bottlenecks of this FlagGems CPU kernel."

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 
+# Keep kernel only for backwards compatibility; never recommend it for benchmark runs.
 VALID_MODES = {"kernel", "operator", "wrapper"}
 VALID_LEVELS = {"core", "comprehensive"}
 DEFAULT_CACHE_EVENTS = [
@@ -53,7 +54,7 @@ class TestEntry:
     test_file: str
     marker: str
     tier: str = "medium"
-    mode: str = "kernel"
+    mode: str = "operator"
     level: str = "core"
     warmup_override: int | None = None
     iter_override: int | None = None
@@ -103,7 +104,7 @@ class RunConfig:
         if not isinstance(global_payload, dict):
             raise ValueError("'global' section must be a mapping")
 
-        global_mode = str(global_payload.get("mode", "kernel"))
+        global_mode = str(global_payload.get("mode", "operator"))
         global_level = str(global_payload.get("level", "core"))
         default_tier = str(global_payload.get("default_tier", "medium"))
         global_metrics = _optional_str_list(

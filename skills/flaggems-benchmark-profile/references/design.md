@@ -9,7 +9,7 @@
 
 ## Context
 
-当前 FlagGems 的 benchmark 框架（`FlagGems/benchmark/`）只采集 kernel 延迟和 speedup 数据，缺少以下关键性能指标：
+当前 FlagGems 的 benchmark 框架（`FlagGems/benchmark/`）主要采集算子延迟和 speedup 数据，缺少以下关键性能指标：
 - 端到端总耗时
 - 算子 JIT 编译耗时
 - 运行时 CPU/内存使用率
@@ -38,11 +38,11 @@
 ├─────────────────────────────────────────────────────────────┤
 │  现有的 benchmark 基础设施 (最小化改动)                       │
 │  conftest.py / performance_utils.py                         │
-│  test_*.py (可选: 暴露 @triton.jit kernel 供单独测量)        │
+│  test_*.py (可选: 提供 kernel 元数据供 perf 关联)             │
 │                                                             │
 │  采集的三层时间:                                              │
-│  ① 编译时间 (新) ② @triton.jit kernel执行 (现有--mode kernel)│
-│  ③ 算子端到端 (现有--mode operator + wall-clock)             │
+│  ① 编译时间 (新) ② 算子端到端 (现有--mode operator)          │
+│  ③ pytest 进程总耗时 (run_profile wall-clock)                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,10 +68,9 @@ FlagGems/benchmark/
 
 | 数据项 | 采集方式 | 依赖现有框架 |
 |--------|---------|-------------|
-| 端到端总耗时 | `scripts/run_profile.py` 记录 subprocess wall-clock | 无 |
+| 进程端到端总耗时 | `scripts/run_profile.py` 记录 subprocess wall-clock | 无 |
 | 编译耗时 | `compile_hook.py` 作为 sitecustomize 注入，monkey-patch `triton.jit` 记录首次编译时间 | 无 |
-| Kernel 执行耗时 | 解析 `--record log` 输出的 JSON（现有 `--mode kernel` 的 `do_bench` 数据，单 kernel 算子直接可用） | 现有 `--mode kernel` + `--record log` |
-| 算子端到端耗时 | 解析 `--record log` 输出的 JSON（现有 `--mode operator` 的 `time.time()` 数据） | 现有 `--mode operator` + `--record log` |
+| 算子 benchmark 延迟 | 解析 `--record log` 输出的 JSON（`--mode operator` 的算子端到端数据） | 现有 `--mode operator` + `--record log` |
 | TFLOPS | 通过 pytest `--metrics tflops` 参数启用，从 `--record log` JSON 解析 | 现有 `BenchmarkMetrics.tflops` 字段 |
 | CPU/内存 | `monitor.py` 后台线程采样子进程（通过 `psutil.Process(pid)`） | 无 |
 | Cache metrics | `perf stat` 包装整个 pytest 子进程 | 无 |
@@ -100,7 +99,7 @@ tiers:
 
 # ===== 全局默认 =====
 global:
-  mode: kernel           # kernel | operator | wrapper
+  mode: operator         # operator recommended; kernel retained for compatibility only
   level: core            # core | comprehensive
   default_tier: medium
 
@@ -212,7 +211,7 @@ numactl --cpunodebind=12 --membind=12 \
       -o /path/to/results/silu_and_mul/perf_stat.csv -x, \
       python -m pytest benchmark/test_silu_and_mul.py \
         -s -m silu_and_mul \
-        --mode kernel --level core \
+        --mode operator --level core \
         --warmup 10 --iter 10 \
         --metrics latency_base latency speedup tflops \
         --record log
@@ -246,23 +245,29 @@ python scripts/run_profile.py --config scripts/profiling_config.yaml --dry-run
 | 层次 | 含义 | 测量方式 | 对应关系 |
 |------|------|----------|----------|
 | **编译耗时** | Triton JIT 将 `@triton.jit` 函数编译为机器码的时间 | 首次调用计时（清除缓存后） | 新采集项 |
-| **Kernel 执行耗时** | `@triton.jit` 函数本身在设备上的计算时间 | `triton.testing.do_bench` 对 kernel 函数直接调用 | 现有 `--mode kernel` |
-| **算子端到端耗时** | Python dispatch + kernel launch + 计算 + sync | `time.time()` 或 wall-clock | 现有 `--mode operator` |
+| **算子 benchmark 延迟** | Python dispatch + kernel launch + 计算 + sync | `time.time()` 或 benchmark record | 现有 `--mode operator` |
+| **进程端到端耗时** | pytest 启动、编译、benchmark 和退出的总耗时 | `scripts/run_profile.py` 的 subprocess wall-clock | profiler 进程计时 |
 
-**对于单 kernel 算子**（如 `silu_and_mul`, `add`, `relu`）：
+**标准 benchmark 统一使用 `--mode operator`**。`kernel` 模式仅保留用于兼容旧命令，任何场景都不推荐使用：
+- 它把完整 benchmark callable 交给 `do_bench`
+- `do_bench` 在每次测量执行前清理 benchmark cache
+- 它不是单独 Triton kernel 的入口或纯 kernel 计时方式，因此任何场景都不推荐使用
+
+对于单 kernel 算子（如 `silu_and_mul`, `add`, `relu`）：
 - Operator 内部只有一个 `@triton.jit` kernel
-- `--mode kernel` 的 `do_bench(fn)` 已经准确测量了 kernel 执行时间
+- operator 延迟覆盖 Python dispatch、kernel 执行和返回前的同步
 - silhouette: `[Python dispatch] [kernel exec] [return]`
 
 **对于多 kernel 算子**（如 `flash_attention_forward`, `cross_entropy_loss`）：
 - Operator 内部有多个 `@triton.jit` kernel 串联
-- `--mode kernel` 测的是所有 kernel 的总时间，无法区分每个 kernel
-- 需要额外暴露单个 kernel 以便分别 benchmark
+- operator 延迟覆盖整条 kernel 链路，是标准 benchmark 的目标指标
+- 如需定位 kernel 热点，应保持 `operator` 模式并使用 `perf stat`、`perf record/report`
+  或其他 profiling/tracing 工具；不要把 benchmark 的 `kernel` 模式当作单独 kernel 测量
 
 **多 kernel 算子的处理策略**：
-- 优先从 operator 源码中提取 `@triton.jit` 函数，在 benchmark 中单独 import 并用 `do_bench` 测量
-- 例如 `silu_and_mul` 中：`do_bench(lambda: silu_and_mul_kernel(A, B))` 测纯 kernel 时间
-- 在 benchmark test 文件中可选地添加 `kernels` 参数列出要单独测量的 kernel
+- 保持 operator benchmark，使用 `perf record/report` 观察 operator 调用中各 kernel 的符号和热点
+- 需要更细粒度时使用专用 profiling/tracing harness，不通过 benchmark 的 `kernel` 模式伪造纯 kernel 数据
+- 在 benchmark test 文件中可选地添加 kernel 元数据，帮助关联 profiling 输出中的 kernel 名称
 
 ### 5. 编译耗时采集方案 (`scripts/profiling/compile_hook.py`)
 
@@ -317,7 +322,7 @@ triton.jit = _patched_jit
 ```bash
 PYTHONPATH=benchmark/profiling:$PYTHONPATH \
 FLAGGEMS_COMPILE_LOG=/path/to/results/<op>/compile.jsonl \
-  pytest ... --mode kernel --record log ...
+  pytest ... --mode operator --record log ...
 ```
 
 **局限性**（需在方案中说明）：
@@ -411,8 +416,8 @@ benchmark/results/profile_20260623_143052/
       "compilation": {
         "total_compile_time_ms": 3200.5,
         "per_shape": [
-          {"shape": [1024, 1024], "dtype": "float16", "compile_ms": 850.3, "kernel_ms": 0.012},
-          {"shape": [4096, 4096], "dtype": "float16", "compile_ms": 920.1, "kernel_ms": 0.045}
+          {"shape": [1024, 1024], "dtype": "float16", "compile_ms": 850.3, "operator_latency_ms": 0.012},
+          {"shape": [4096, 4096], "dtype": "float16", "compile_ms": 920.1, "operator_latency_ms": 0.045}
         ]
       },
       "cpu_memory": {
@@ -451,7 +456,7 @@ benchmark/results/profile_20260623_143052/
 
 1. **子进程调用**：`scripts/run_profile.py` 用 `subprocess.Popen` 执行现有 pytest 命令，传递 `--mode`, `--level`, `--warmup`, `--iter`, `--record log` 等现有 CLI 参数
 2. **sitecustomize 注入**：`compile_hook.py` 通过 `PYTHONPATH` 注入，monkey-patch `triton.jit` 以记录编译时间（类似 `run_priority_suite.py` 已有的 `_bootstrap/sitecustomize.py` 模式）
-3. **后处理解析**：解析 `--record log` 产生的 JSON 日志文件获取 kernel/operator 延迟数据
+3. **后处理解析**：解析 `--record log` 产生的 JSON 日志文件获取 operator 延迟数据
 4. **外部监控**：`perf stat` + `psutil` 均在独立进程中运行，对 benchmark 进程无侵入
 
 **为什么选择 monkey-patch 而非修改 `performance_utils.py`**：
@@ -468,7 +473,7 @@ benchmark/results/profile_20260623_143052/
 | Warmup/Iter 配置 | **3 个 tier**（light/medium/heavy），算子引用 tier |
 | 接口兼容 | **独立使用**，新 CLI 不依赖 `run_priority_suite.py` |
 | CPU 采样间隔 | **默认 1s**，在 config 中可配 |
-| perf 范围 | **整个 pytest 进程**，包含了 Python 开销但实现简单——如果需要更细粒度（仅 kernel 部分），后续可升级为 `perf_event_open` |
+| perf 范围 | **整个 pytest 进程**，包含 Python 开销；使用 `perf record/report` 可进一步定位其中的 kernel 热点 |
 
 ---
 ## 验证方案
@@ -546,7 +551,7 @@ class TestEntry:
     test_file: str          # e.g. "test_silu_and_mul.py"
     marker: str             # e.g. "silu_and_mul"
     tier: str = "medium"    # light | medium | heavy
-    mode: str = "kernel"    # kernel | operator
+    mode: str = "operator"  # operator recommended; kernel compatibility only
     level: str = "core"
 
 @dataclass
@@ -801,7 +806,7 @@ tiers:
   heavy:    { warmup: 500, iterations: 200 }
 
 global:
-  mode: kernel
+  mode: operator
   level: core
   default_tier: medium
 

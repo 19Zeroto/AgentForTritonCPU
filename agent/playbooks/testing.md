@@ -102,7 +102,7 @@ The following command is a low-cost smoke benchmark. Replace `<benchmark_file.py
 OMP_NUM_THREADS=32 numactl --cpunodebind=<cpu_node> --membind=<memory_node> \
   taskset -c <cpu_list> pytest -q --tb=no \
   FlagGems/benchmark/<benchmark_file.py> \
-  --mode kernel --level core --dtypes float32 \
+  --mode operator --level core --dtypes float32 \
   --warmup 5 --iter 5 --metrics latency --record log
 ```
 
@@ -112,7 +112,7 @@ For multiple dtypes, pass `--dtypes` once per dtype because the option is append
 OMP_NUM_THREADS=32 numactl --cpunodebind=<cpu_node> --membind=<memory_node> \
   taskset -c <cpu_list> pytest -q --tb=no \
   FlagGems/benchmark/<benchmark_file.py> \
-  --mode kernel --level core \
+  --mode operator --level core \
   --dtypes float16 --dtypes float32 \
   --warmup 5 --iter 5 --metrics latency --record log
 ```
@@ -121,11 +121,15 @@ Use larger `--warmup` and `--iter` values for stable performance measurements af
 
 ### Benchmark mode selection
 
-- `--mode kernel`: measure the device kernel. Use this for the basic kernel performance check.
-- `--mode operator`: measure the end-to-end operator path.
+- `--mode operator`: measure the end-to-end operator path. Use this as the default for benchmark runs.
+- `kernel` mode: run the legacy cache-clearing `do_bench` path against the full callable; it is not an isolated Triton-kernel measurement and is not recommended in any case.
 - `--mode wrapper`: measure the runtime wrapper path.
 
-When comparing kernel performance, keep the mode, level, dtype, shape file, warmup, and iteration count consistent between runs. The default shape file is `FlagGems/benchmark/core_shapes.yaml`; pass `--shape_file <path>` when a different shape set is required.
+For kernel performance analysis, keep the benchmark in `operator` mode and use
+`perf stat`, `perf record/report`, or another profiling/tracing tool to inspect
+generated kernel symbols and hotspots. Do not use `kernel` mode for this purpose.
+
+When comparing benchmark performance, keep the mode, level, dtype, shape file, warmup, and iteration count consistent between runs. The default shape file is `FlagGems/benchmark/core_shapes.yaml`; pass `--shape_file <path>` when a different shape set is required.
 
 ### Result interpretation
 

@@ -249,7 +249,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Run the compute, memory, or all default operator list.",
     )
     parser.add_argument(
-        "--mode", choices=("kernel", "operator", "wrapper"), default="operator"
+        "--mode",
+        choices=("kernel", "operator", "wrapper"),
+        default="operator",
+        help=(
+            "Benchmark mode (operator is recommended; kernel uses cache-clearing "
+            "do_bench on the full callable, is not an isolated kernel "
+            "measurement, and is not recommended in any case)."
+        ),
     )
     parser.add_argument(
         "--level", choices=("core", "comprehensive"), default="core"

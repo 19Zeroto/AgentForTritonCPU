@@ -10,7 +10,7 @@ tiers:
     iterations: 200
 
 global:
-  mode: kernel
+  mode: operator
   level: core
   default_tier: medium
   # null means use each benchmark class's default metrics. Set a list on a

@@ -32,9 +32,11 @@
 | 任务条件 | Skill 入口 |
 | --- | --- |
 | 准备或检查 Triton CPU、LLVM/MLIR、FlagGems 环境 | `../skills/environment/SKILL.md` |
+| 更新 LLVM/MLIR、重新安装 Triton CPU 并验证 dgeglu float32 | `../skills/triton-cpu-rebuild-test/SKILL.md` |
 | 批量、并行、断点续跑或汇总 FlagGems correctness 测试 | `../skills/test-suite/SKILL.md` |
 | 已有可复现 pytest 且已知 good/bad commit，需要定位首个回归 commit | `../skills/commit-bisect/SKILL.md` |
 | 收集通用 FlagGems benchmark、perf、编译耗时、TFLOPS 或 profiling 报告 | `../skills/flaggems-benchmark-profile/SKILL.md` |
+| 定位 FlagGems 生成 kernel 的周期热点、调用树归因并生成 perf 瓶颈报告 | `../skills/flaggems-kernel-perf/SKILL.md` |
 | 运行、导出或修改 FlagGems fusion compute/memory 指标与公式 | `../skills/flaggems-fusion-metrics/SKILL.md` |
 | 生成或审计 Triton language、FlagGems operator 支持矩阵 | `../skills/support-matrix/SKILL.md` |
 

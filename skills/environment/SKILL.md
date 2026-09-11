@@ -7,9 +7,11 @@ description: Prepare and verify the Triton CPU development environment by activa
 
 ## Workflow
 
-1. Resolve workspace from `AGENT_DIR`, defaulting from this skill location.
-2. Override `VENV_DIR`, `LLVM_INSTALL_DIR`, or `TRITON_REPO_DIR` when workspace
-   layout differs.
+1. Resolve the workspace/install root from `AGENT_DIR`, defaulting to
+   `$HOME/agent`.
+2. Override `AGENT_DIR` when the workspace/install root differs; override
+   `VENV_DIR`, `LLVM_INSTALL_DIR`, or `TRITON_REPO_DIR` when individual paths
+   differ from the workspace layout.
 3. Source the helper in the current shell:
 
    ```bash
@@ -32,4 +34,3 @@ description: Prepare and verify the Triton CPU development environment by activa
 - Keep `TRITON_CACHE_DIR` outside source repositories.
 - Report whether Conda or venv was activated.
 - Report missing toolchain components without claiming environment readiness.
-

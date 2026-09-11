@@ -26,7 +26,8 @@ clang17 is installed in '/opt/openEuler/llvm-toolset-17/root/usr/bin/clang'
 # Building the LLVM Compiler
 Activate your Python environment, put the openEuler LLVM 20 source code and build it.
 ```bash
-cd $YOUR_WORKDIR
+export AGENT_DIR="${AGENT_DIR:-$HOME/agent}"
+cd "$AGENT_DIR"
 git clone https://gitcode.com/openeuler/llvm-project.git -b dev_20.1.8 --depth=1
 cd llvm-project
 mkdir build && cd build
@@ -45,12 +46,12 @@ It is important to note that we are using the MLIR python bindings so the python
 # Building the Triton Compiler
 Pull the Triton-CPU source code and build it.
 ```bash
-cd $YOUR_WORKDIR
+cd "$AGENT_DIR"
 git clone https://gitcode.com/openeuler/triton-cpu.git
 cd triton-cpu
 git submodule init
 git submodule update
-export LLVM_INSTALL_DIR=$YOUR_WORKDIR/llvm-project/install
+export LLVM_INSTALL_DIR="$AGENT_DIR/llvm-project/install"
 export LLVM_INCLUDE_DIRS=$LLVM_INSTALL_DIR/include
 export LLVM_LIBRARY_DIR=$LLVM_INSTALL_DIR/lib
 export LLVM_SYSPATH=$LLVM_INSTALL_DIR
@@ -68,7 +69,7 @@ Before starting the test, you may need to install some dependencies: pytest-xdis
 ```bash
 export TRITON_DISABLE_LINE_INFO=1
 export TRITON_USE_SHARED_BACKEND=1
-export LLVM_BINARY_DIR=$YOUR_WORKDIR/llvm-project/install/bin/
-export PYTHONPATH=$YOUR_WORKDIR/llvm-project/install/python_packages/mlir_core
-export TRITON_SHARED_OPT_PATH=$YOUR_WORKDIR/triton-cpu/python/build/cmake.linux-{arch}-cpython-{version}/third_party/triton_shared/tools/triton-shared-opt/triton-shared-opt
+export LLVM_BINARY_DIR="$AGENT_DIR/llvm-project/install/bin/"
+export PYTHONPATH="$AGENT_DIR/llvm-project/install/python_packages/mlir_core"
+export TRITON_SHARED_OPT_PATH="$AGENT_DIR/triton-cpu/python/build/cmake.linux-{arch}-cpython-{version}/third_party/triton_shared/tools/triton-shared-opt/triton-shared-opt"
 ```

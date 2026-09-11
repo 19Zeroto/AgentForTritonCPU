@@ -267,7 +267,7 @@ OMP_NUM_THREADS=32 MKL_NUM_THREADS=32 PYTHONDONTWRITEBYTECODE=1 \
 numactl --cpunodebind=3 --membind=3 taskset -c 456-487 \
 python3 -m pytest test_silu_and_mul.py -s -m silu_and_mul \
   --record log \
-  --mode kernel \
+  --mode operator \
   --level core \
   --warmup 20 \
   --iter 10 \

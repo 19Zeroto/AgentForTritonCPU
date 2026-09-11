@@ -9,10 +9,11 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_AGENTFORTRITONCPU_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-export AGENTFORTRITONCPU_DIR="${AGENTFORTRITONCPU_DIR:-$DEFAULT_AGENTFORTRITONCPU_DIR}"
-DEFAULT_AGENT_DIR="$(cd "$AGENTFORTRITONCPU_DIR/.." && pwd)"
-export AGENT_DIR="${AGENT_DIR:-$DEFAULT_AGENT_DIR}"
+export AGENTFORTRITONCPU_DIR="${AGENTFORTRITONCPU_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
+# AGENT_DIR is the workspace/install root. Keep the default independent from
+# the checkout location so callers can relocate the repository and override
+# the installation root explicitly when needed.
+export AGENT_DIR="${AGENT_DIR:-${HOME}/agent}"
 
 _find_conda_base() {
   if [[ -n "${CONDA_EXE:-}" && -x "$CONDA_EXE" ]]; then

@@ -39,5 +39,5 @@ LLVM_INSTALL_DIR=$AGENT_DIR/llvm-project/install
 AGENTFORTRITONCPU_DIR=$AGENT_DIR/AgentForTritonCPU
 ```
 
-脚本优先从自身位置推导 `AGENTFORTRITONCPU_DIR` 和 `AGENT_DIR`，环境变量可覆盖。
-日志、缓存、测试状态默认保存于仓外。
+脚本从自身位置推导 `AGENTFORTRITONCPU_DIR`；`AGENT_DIR` 默认是 `$HOME/agent`，
+并可由环境变量覆盖。日志、缓存、测试状态默认保存于仓外。

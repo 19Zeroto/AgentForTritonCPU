@@ -5,6 +5,7 @@
 - 不是所有任务都需要运行测试。只有在修改代码、复现失败、验证修复或用户明确要求测试时，才进入测试流程。
 - 需要运行或建议用户运行测试前，先阅读 `agent/playbooks/testing.md`，按目标套件选择命令和环境变量，不要直接沿用记忆中的 pytest 参数。
 - 所有测试命令必须显式设置 `OMP_NUM_THREADS=32` 或更低；不要依赖默认值。
+- 涉及重新编译或安装 Triton CPU/MLIR 的验证时，整个流程的每条命令都必须继承与测试相同的 CPU/NUMA 绑定；必须用外层 `numactl --physcpubind=288-319 --membind=2` 启动重装脚本，不能只给最终 benchmark 绑核。绑定范围变化时，外层 `numactl`、脚本的 `--cpu-node/--mem-node/--cpu-list` 和 `OMP_NUM_THREADS` 必须同步修改。
 - 使用 pytest-xdist 时，`pytest -n` 的并发数必须小于等于 32；需要更高并发时先征得用户确认，并说明资源风险。
 - 运行前先确认目标用例属于 Triton `test_core`、`FlagGems/tests` 还是 benchmark；这些入口的 pytest 参数、marker、并发和环境变量要求不同。
 - 只声明实际运行过的测试结果。targeted case 通过不能表述为全量测试通过。

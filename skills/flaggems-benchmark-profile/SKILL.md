@@ -8,8 +8,11 @@ description: Profile Triton CPU FlagGems benchmarks with per-operator or per-sha
 ## Workflow
 
 1. Load the `environment` skill.
-2. Confirm target benchmark, dtype, mode, level, warmup, iterations, NUMA node,
-   CPU affinity, and external output path.
+2. Confirm target benchmark, dtype, mode (default: `operator`), level, warmup,
+   iterations, NUMA node, CPU affinity, and external output path.
+   The retained `kernel` mode clears benchmark cache through `do_bench` around
+   the full callable; it is not an isolated kernel measurement and is never
+   recommended. Use `perf` or another profiling tool for kernel analysis.
 3. Review available options:
 
    ```bash

@@ -36,7 +36,7 @@ FlagGems benchmark 系统位于 `FlagGems/benchmark/`，用于测量 Triton 算�
 
 | 参数 | 可选值 | 说明 |
 |------|--------|------|
-| `--mode` | `kernel`, `operator`, `wrapper` | 测量模式：kernel=纯Triton内核耗时，operator=完整算子调用，wrapper=Python封装层 |
+| `--mode` | `kernel`, `operator`, `wrapper` | 测量模式：operator=完整算子调用（benchmark 默认），kernel=对完整调用执行清缓存 `do_bench`（不是单独 kernel），wrapper=Python封装层 |
 | `--level` | `comprehensive`, `core` | 测试范围：comprehensive=全部shape，core=核心shape |
 | `--dtypes` | 空格分隔的dtype列表 | 如 `float16 float32 bfloat16` |
 | `--warmup` | 整数 | 预热迭代次数（默认1000） |
@@ -104,14 +104,20 @@ SME 路径主要影响矩阵类负载。分析时优先观察 TFLOPS、SVL-aware
 
 ## 执行模式
 
+`kernel` 模式仅保留用于兼容旧命令，任何场景都不推荐使用：它把完整的 benchmark callable
+交给 `do_bench`，并在每次测量执行前清理 benchmark cache，不代表只执行或只计时
+一个 Triton kernel，因此不推荐任何 benchmark 或 kernel 分析场景使用。标准执行
+统一使用 `operator` 模式；需要分析 kernel 热点时，应使用 `perf stat`、
+`perf record/report` 或其他 profiling/tracing 工具展开。
+
 ### 单算子 benchmark
 ```bash
-pytest FlagGems/benchmark/test_add.py -x -v --mode kernel --level core --dtypes float16 float32
+pytest FlagGems/benchmark/test_add.py -x -v --mode operator --level core --dtypes float16 float32
 ```
 
 ### 优先级套件
 ```bash
-python FlagGems/benchmark/run_priority_suite.py --mode kernel --jobs 4
+python FlagGems/benchmark/run_priority_suite.py --mode operator --jobs 4
 ```
 执行 `PRIORITY_OPS` 中定义的 70+ 核心算子，支持多进程并行。
 

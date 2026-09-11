@@ -86,7 +86,7 @@ Environment:
   and pass it with --build-env-script.
 
 Example:
-  export LLVM_INSTALL_DIR="$HOME/agent/llvm-project/install"
+  export LLVM_INSTALL_DIR="$AGENT_DIR/llvm-project/install"
   bash scripts/bisect_triton_commit.sh \
     --good <good_commit> \
     --test 'FlagGems/tests/test_reduction_ops.py::test_cross_entropy_loss'

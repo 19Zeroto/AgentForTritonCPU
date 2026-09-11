@@ -20,6 +20,7 @@ AgentForTritonCPU/
 │   ├── environment/
 │   ├── commit-bisect/
 │   ├── flaggems-benchmark-profile/
+│   ├── flaggems-kernel-perf/
 │   ├── support-matrix/
 │   ├── silu-pointwise/
 │   └── sme-benchmark/
@@ -39,7 +40,7 @@ $AGENT_DIR/
 └── cache/
 ```
 
-`AGENT_DIR` 默认由脚本位置推导，也可显式设置。常用覆盖变量：
+`AGENT_DIR` 默认是 `$HOME/agent`，也可显式设置以替换工作区/安装根目录。常用覆盖变量：
 `TRITON_REPO_DIR`、`LLVM_INSTALL_DIR`、`VENV_DIR`、`RUN_DIR`、`LOG_ROOT`。
 
 加载环境：
